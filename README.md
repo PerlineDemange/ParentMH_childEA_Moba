@@ -1,6 +1,6 @@
 # No effect of parental mental health on children’s academic achievement: a within-family study 
 
-Scripts used for the analyses of the manuscript "No effect of parental mental health on children’s academic achievement: a within-family study". 
+Scripts used for the analyses of the upcoming manuscript "No effect of parental mental health on children’s academic achievement: a within-family study". 
 
 
 - 01_identify_siblings_children.R: identify siblings and children of siblings in the Norwegian registry 
