@@ -1,4 +1,4 @@
-import delimited "N:\durable\projects\Perline\Eating disorders data\data_moba_mother_eatingdisorders.csv", encoding(ISO-8859-2) clear
+import delimited "N:\durable\projects\Perline\2021_Children_siblings_MH\Eating disorders data\data_moba_mother_eatingdisorders_250103.csv", encoding(ISO-8859-2) clear
 
 destring barn_nr birth_yr, replace ignore("NA" 0)
 destring aa1475 aa1476 aa1477 aa1478 aa1480 aa1482 aa1484 aa1486 aa1479 aa1481 aa1483 aa1485 aa1487 aa1488 nn285 nn286 nn287 nn288 nn289 nn290 nn291 nn292 nn293 nn367 nn294 nn295 nn296 nn297 nn298 nn299 nn300 nn301, replace ignore("NA")
@@ -38,28 +38,28 @@ pwcorr nn289p nn290p nn293 nn367 nn294 nn295 nn296 nn297 nn298 nn299 nn300 nn301
 
 irt grm aa1475 aa1476 aa1477 aa1478 aa1480 aa1482 aa1484 aa1486 aa1479 aa1481 aa1483 aa1485 aa1487 aa1488, intmethod(ghermite)
 matrix b_ED1_GRM = e(b)
-estimates save "N:\durable\projects\Perline\Eating disorders data\ED1_GRM", replace
+estimates save "N:\durable\projects\Perline\2021_Children_siblings_MH\Eating disorders data\ED1_GRM", replace
 *irt grm aa1475 aa1476 aa1477 aa1478 aa1480 aa1482 aa1484 aa1486 aa1479 aa1481 aa1483 aa1485 aa1487 aa1488, intmethod(mvaghermite) from(b_ED1_GRM)
 
 irt nrm aa1475 aa1476 aa1477 aa1478 aa1480 aa1482 aa1484 aa1486 aa1479 aa1481 aa1483 aa1485 aa1487 aa1488, intmethod(ghermite) from(b_ED1_GRM, skip)
 matrix b_ED1_NRM = e(b)
-estimates save "N:\durable\projects\Perline\Eating disorders data\ED1_NRM", replace
+estimates save "N:\durable\projects\Perline\2021_Children_siblings_MH\Eating disorders data\ED1_NRM", replace
 
 irt grm nn289p nn290p nn293 nn367 nn294 nn295 nn296 nn297 nn298 nn299 nn300 nn301,  intmethod(ghermite)
 matrix b_ED8_GRM = e(b)
-estimates save "N:\durable\projects\Perline\Eating disorders data\ED8_GRM", replace
+estimates save "N:\durable\projects\Perline\2021_Children_siblings_MH\Eating disorders data\ED8_GRM", replace
 
 irt nrm nn289p nn290p nn293 nn367 nn294 nn295 nn296 nn297 nn298 nn299 nn300 nn301,  intmethod(ghermite) from(b_ED8_GRM, skip)
 matrix b_ED8_NRM = e(b)
-estimates save "N:\durable\projects\Perline\Eating disorders data\ED8_NRM", replace
+estimates save "N:\durable\projects\Perline\2021_Children_siblings_MH\Eating disorders data\ED8_NRM", replace
 
-estimates use "N:\durable\projects\Perline\Eating disorders data\ED1_GRM"
+estimates use "N:\durable\projects\Perline\2021_Children_siblings_MH\Eating disorders data\ED1_GRM"
 predict ED1_GRM, latent se(ED1_GRM_se)
-estimates use "N:\durable\projects\Perline\Eating disorders data\ED1_NRM"
+estimates use "N:\durable\projects\Perline\2021_Children_siblings_MH\Eating disorders data\ED1_NRM"
 predict ED1_NRM, latent se(ED1_NRM_se)
-estimates use "N:\durable\projects\Perline\Eating disorders data\ED8_GRM"
+estimates use "N:\durable\projects\Perline\2021_Children_siblings_MH\Eating disorders data\ED8_GRM"
 predict ED8_GRM, latent se(ED8_GRM_se)
-estimates use "N:\durable\projects\Perline\Eating disorders data\ED8_NRM"
+estimates use "N:\durable\projects\Perline\2021_Children_siblings_MH\Eating disorders data\ED8_NRM"
 predict ED8_NRM, latent se(ED8_NRM_se)
 
 
@@ -82,7 +82,7 @@ replace ED1_NRM_se = . if  ED1_NRM_se == 1
 replace ED8_GRM_se = . if  ED8_GRM_se == 1
 replace ED8_NRM_se = . if  ED8_NRM_se == 1
 
-save "N:\durable\projects\Perline\Eating disorders data\data_moba_mother_eatingdisorders_scores.dta", replace
+save "N:\durable\projects\Perline\2021_Children_siblings_MH\\Eating disorders data\data_moba_mother_eatingdisorders_scores_250103.dta", replace
 
 summ ED1_GRM_se ED1_NRM_se ED8_GRM_se ED8_NRM_se, d
 twoway (scatter ED1_GRM_se ED1_NRM_se)

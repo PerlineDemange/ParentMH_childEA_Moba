@@ -1,7 +1,8 @@
 # Perline Demange 
 # Run siblings analyses 
 # Start date: 03/11/2021
-# cleaned 09-01-23
+# cleaned 2023-01-09
+# Updated 2025-01-03
 
 rm(list=ls())
 library(tidyverse)
@@ -15,7 +16,7 @@ library(gridExtra)
 
 # 1. All sibships  ###################################################################### 
 ## 1.1 Load data with cousins, remove cousins <10 in 2015 when father data #######
-load("data/school_moba_cousins_total_211208.rda") #29393
+load("data/school_moba_cousins_total_250103.rda") #29846 before was 29393
 
 school_moba_cousins_total <- extract(school_moba_cousins_total, year, 
                                       into = c("yeartest", "monthtest"),
@@ -23,6 +24,7 @@ school_moba_cousins_total <- extract(school_moba_cousins_total, year,
 table(school_moba_cousins_total$yeartest)
 school_moba_cousins_total$agein2015 <- 2015 - school_moba_cousins_total$birth_yr
 table(school_moba_cousins_total$agein2015)
+
 
 # father's audit and anxiety and depression SCL8 where asked in 2015, which might be after the kid 10yo 
 # so I exclude kids > 10yo in 2015 for these data when the parent of relevance if the father (not a problem for SCL8 in mothers) 
@@ -32,11 +34,11 @@ school_moba_cousins_total$AUDIT[
   school_moba_cousins_total$sib_parent == "father" & school_moba_cousins_total$agein2015 >10 ] <- NA
 
 school_moba_cousins_total_NPREG05 <- school_moba_cousins_total %>% 
-  drop_na(std_score_NPREG05) #29146
+  drop_na(std_score_NPREG05)
 school_moba_cousins_total_NPLES05 <- school_moba_cousins_total %>% 
-  drop_na(std_score_NPLES05) #28772
+  drop_na(std_score_NPLES05) 
 school_moba_cousins_total_NPENG05 <- school_moba_cousins_total %>%
-  drop_na(std_score_NPENG05) #28901
+  drop_na(std_score_NPENG05) 
 
 ## 1.2 Run all analyses in the subsets for each traits and school performance #########
 items_parents <- c("SCL5_Q1", "ADHD", "SCL8", "AUDIT")
@@ -92,7 +94,7 @@ for (i in 1:length(school_subject)){
 head(full_results)
 full_results_siblings_total <- full_results
 #save
-save(full_results_siblings_total, file = "output/full_results_siblings_total_230109.rda")
+save(full_results_siblings_total, file = "output/full_results_siblings_total_250106.rda")
 
 ## 1.4 Get all covariates estimates ##################################################
 full_results <- NULL
@@ -114,7 +116,7 @@ for (i in 1:length(school_subject)){
 }
 
 full_results_siblings_total_allcov <- full_results
-save(full_results_siblings_total_allcov, file = "output/full_results_siblings_total_allcov_230109.rda")
+save(full_results_siblings_total_allcov, file = "output/full_results_siblings_total_allcov_250106.rda")
 
 
 
@@ -133,7 +135,7 @@ for (i in 1:length(school_subject)){
   }
 }
 covariances <- full_results
-save(covariances, file = "output/full_results_siblings_total_covariances_230109.rda")
+save(covariances, file = "output/full_results_siblings_total_covariances_250106.rda")
 
 full_results <- NULL
 for (i in 1:length(school_subject)){
@@ -146,7 +148,7 @@ for (i in 1:length(school_subject)){
   }
 }
 means <- full_results
-save(means, file = "output/full_results_siblings_total_means_230109.rda")
+save(means, file = "output/full_results_siblings_total_means_250106.rda")
 
 
 full_results <- NULL
@@ -161,7 +163,7 @@ for (i in 1:length(school_subject)){
 }
 
 descriptives <- full_results
-save(descriptives, file = "output/full_results_siblings_total_descriptives_230109.rda")
+save(descriptives, file = "output/full_results_siblings_total_descriptives_250106.rda")
 
 
 
@@ -216,7 +218,8 @@ for (i in 1:length(school_subject)){
 head(full_results)
 full_results_siblings_total <- full_results
 #save
-save(full_results_siblings_total, file = "output/full_results_siblings_total_EA_230109.rda")
+save(full_results_siblings_total, 
+     file = "output/full_results_siblings_total_EA_250106.rda")
 
 ### 1.6.2 Get all covariates estimates ##################################################
 full_results <- NULL
@@ -238,7 +241,8 @@ for (i in 1:length(school_subject)){
 }
 
 full_results_siblings_total_allcov <- full_results
-save(full_results_siblings_total_allcov, file = "output/full_results_siblings_total_allcov_EA_230109.rda")
+save(full_results_siblings_total_allcov, 
+     file = "output/full_results_siblings_total_allcov_EA_250106.rda")
 
 
 ### 1.6.3  Get descriptive in table### 
@@ -256,7 +260,7 @@ for (i in 1:length(school_subject)){
   }
 }
 covariances <- full_results
-save(covariances, file = "output/full_results_siblings_total_covariances_EA_230109.rda")
+save(covariances, file = "output/full_results_siblings_total_covariances_EA_250106.rda")
 
 full_results <- NULL
 for (i in 1:length(school_subject)){
@@ -269,7 +273,7 @@ for (i in 1:length(school_subject)){
   }
 }
 means <- full_results
-save(means, file = "output/full_results_siblings_total_means_EA_230109.rda")
+save(means, file = "output/full_results_siblings_total_means_EA_250106.rda")
 
 
 full_results <- NULL
@@ -284,18 +288,19 @@ for (i in 1:length(school_subject)){
 }
 
 descriptives <- full_results
-save(descriptives, file = "output/full_results_siblings_total_descriptives_EA_230109.rda")
+save(descriptives, 
+     file = "output/full_results_siblings_total_descriptives_EA_250106.rda")
 
 # 2. For mothers ################################################################
 ## 2.1  Load data with maternal cousins #######################
-load("data/school_mother_moba_cousins_211124.rda") #11447
+load("data/school_mother_moba_cousins_250103.rda") #12054 before was 11447
 
 school_mother_moba_cousins_NPREG05 <- school_mother_moba_cousins %>% 
-  drop_na(std_score_NPREG05) #11 346
+  drop_na(std_score_NPREG05) #11 948
 school_mother_moba_cousins_NPLES05 <- school_mother_moba_cousins %>% 
-  drop_na(std_score_NPLES05) #11 188
+  drop_na(std_score_NPLES05) #11 791
 school_mother_moba_cousins_NPENG05 <- school_mother_moba_cousins %>%
-  drop_na(std_score_NPENG05) #11 261
+  drop_na(std_score_NPENG05) #11 860
 
 ## 2.2 Run all analyses in the subsets for each traits and school performance #########
 items_mother <- c("scale_score_items_m_SCL_Q1_full",
@@ -360,7 +365,7 @@ for (i in 1:length(school_subject)){
 head(full_results)
 full_results_siblings_mother <- full_results
 #save
-save(full_results_siblings_mother, file = "output/full_results_siblings_mother_2301012.rda")
+save(full_results_siblings_mother, file = "output/full_results_siblings_mother_250106.rda")
 
 ## 2.4 Get all covariates estimates ##################################################
 full_results <- NULL
@@ -382,7 +387,8 @@ for (i in 1:length(school_subject)){
 }
 
 full_results_siblings_mother_allcov <- full_results
-save(full_results_siblings_mother_allcov, file = "output/full_results_siblings_mother_allcov_230112.rda")
+save(full_results_siblings_mother_allcov,
+     file = "output/full_results_siblings_mother_allcov_250106.rda")
 
 
 ## 2.5 Get descriptive in table #######
@@ -398,7 +404,7 @@ for (i in 1:length(school_subject)){
   }
 }
 covariances <- full_results
-save(covariances, file = "output/full_results_siblings_mother_covariances_230112.rda")
+save(covariances, file = "output/full_results_siblings_mother_covariances_250106.rda")
 
 full_results <- NULL
 for (i in 1:length(school_subject)){
@@ -411,7 +417,7 @@ for (i in 1:length(school_subject)){
   }
 }
 means <- full_results
-save(means, file = "output/full_results_siblings_mother_means_230112.rda")
+save(means, file = "output/full_results_siblings_mother_means_250106.rda")
 
 
 full_results <- NULL
@@ -426,7 +432,8 @@ for (i in 1:length(school_subject)){
 }
 
 descriptives <- full_results
-save(descriptives, file = "output/full_results_siblings_mother_descriptives_230112.rda")
+save(descriptives, 
+     file = "output/full_results_siblings_mother_descriptives_250106.rda")
 
 ## 2.6 Adjusting for EA #######
 
@@ -448,6 +455,9 @@ for (trait in 1:length(items_mother)){
                              T))
 }
 
+# Warning message:
+#   In rq.fit.sfn(x, y, tau = tau, rhs = rhs, control = control, ...) :
+#   tiny diagonals replaced with Inf when calling blkfct
 
 ### 2.6.1 Get population, within and between effects for all conditions + sample sizes #############
 school_subject <- c("NPREG05", "NPLES05", "NPENG05")
@@ -480,7 +490,8 @@ for (i in 1:length(school_subject)){
 head(full_results)
 full_results_siblings_mother <- full_results
 #save
-save(full_results_siblings_mother, file = "output/full_results_siblings_mother_EA_230112.rda")
+save(full_results_siblings_mother,
+     file = "output/full_results_siblings_mother_EA_250106.rda")
 
 ### 2.6.2 Get all covariates estimates ##################################################
 full_results <- NULL
@@ -502,11 +513,11 @@ for (i in 1:length(school_subject)){
 }
 
 full_results_siblings_mother_allcov <- full_results
-save(full_results_siblings_mother_allcov, file = "output/full_results_siblings_mother_allcov_EA_230112.rda")
+save(full_results_siblings_mother_allcov,
+     file = "output/full_results_siblings_mother_allcov_EA_250106.rda")
 
 
 ### 2.6.3  Get descriptive in table ######
-
 
 full_results <- NULL
 for (i in 1:length(school_subject)){
@@ -519,7 +530,8 @@ for (i in 1:length(school_subject)){
   }
 }
 covariances <- full_results
-save(covariances, file = "output/full_results_siblings_mother_covariances_EA_230112.rda")
+save(covariances, 
+     file = "output/full_results_siblings_mother_covariances_EA_250106.rda")
 
 full_results <- NULL
 for (i in 1:length(school_subject)){
@@ -532,7 +544,8 @@ for (i in 1:length(school_subject)){
   }
 }
 means <- full_results
-save(means, file = "output/full_results_siblings_mother_means_EA_230112.rda")
+save(means, 
+     file = "output/full_results_siblings_mother_means_EA_250106.rda")
 
 
 full_results <- NULL
@@ -547,13 +560,14 @@ for (i in 1:length(school_subject)){
 }
 
 descriptives <- full_results
-save(descriptives, file = "output/full_results_siblings_mother_descriptives_EA_230112.rda")
+save(descriptives, 
+     file = "output/full_results_siblings_mother_descriptives_EA_250106.rda")
 
 
 # 3. For fathers ################################################################
 ## 3.1  Load data with paternal cousins, remove cousins <10 in 2015  #######################
 # Load data with paternal cousins 
-load("data/school_father_moba_cousins_211124.rda") #7333
+load("data/school_father_moba_cousins_250103.rda") #7618 before was 7333
 
 school_father_moba_cousins <- extract(school_father_moba_cousins, year, 
                                       into = c("yeartest", "monthtest"),
@@ -571,11 +585,11 @@ school_father_moba_cousins$scale_score_items_f_AUDIT_Q2015[school_father_moba_co
 
 #Data with outcomes
 school_father_moba_cousins_NPREG05 <-school_father_moba_cousins %>% 
-  drop_na(std_score_NPREG05) #7280
+  drop_na(std_score_NPREG05) #7564
 school_father_moba_cousins_NPLES05 <-school_father_moba_cousins %>% 
-  drop_na(std_score_NPLES05) #7198
+  drop_na(std_score_NPLES05) #7485
 school_father_moba_cousins_NPENG05 <-school_father_moba_cousins %>%
-  drop_na(std_score_NPENG05) #7221
+  drop_na(std_score_NPENG05) #7507
 
 ## 3.2 Run all analyses in the subsets for each traits and school performance #########
 items_father <- c("scale_score_items_f_SCL_Q1_full", 
@@ -640,7 +654,8 @@ for (i in 1:length(school_subject)){
 head(full_results)
 full_results_siblings_father <- full_results
 #save
-save(full_results_siblings_father, file = "output/full_results_siblings_father_2301012.rda")
+save(full_results_siblings_father, 
+     file = "output/full_results_siblings_father_250106.rda")
 
 ## 3.4 Get all covariates estimates ##################################################
 full_results <- NULL
@@ -662,7 +677,8 @@ for (i in 1:length(school_subject)){
 }
 
 full_results_siblings_father_allcov <- full_results
-save(full_results_siblings_father_allcov, file = "output/full_results_siblings_father_allcov_230112.rda")
+save(full_results_siblings_father_allcov, 
+     file = "output/full_results_siblings_father_allcov_250106.rda")
 
 
 ## 3.5 Get descriptive in table #######
@@ -678,7 +694,7 @@ for (i in 1:length(school_subject)){
   }
 }
 covariances <- full_results
-save(covariances, file = "output/full_results_siblings_father_covariances_230112.rda")
+save(covariances, file = "output/full_results_siblings_father_covariances_250106.rda")
 
 full_results <- NULL
 for (i in 1:length(school_subject)){
@@ -691,7 +707,7 @@ for (i in 1:length(school_subject)){
   }
 }
 means <- full_results
-save(means, file = "output/full_results_siblings_father_means_230112.rda")
+save(means, file = "output/full_results_siblings_father_means_250106.rda")
 
 
 full_results <- NULL
@@ -706,7 +722,7 @@ for (i in 1:length(school_subject)){
 }
 
 descriptives <- full_results
-save(descriptives, file = "output/full_results_siblings_father_descriptives_230112.rda")
+save(descriptives, file = "output/full_results_siblings_father_descriptives_250106.rda")
 
 ## 3.6 Adjusting for EA #######
 
@@ -760,7 +776,8 @@ for (i in 1:length(school_subject)){
 head(full_results)
 full_results_siblings_father <- full_results
 #save
-save(full_results_siblings_father, file = "output/full_results_siblings_father_EA_230112.rda")
+save(full_results_siblings_father,
+     file = "output/full_results_siblings_father_EA_250106.rda")
 
 ### 3.6.2 Get all covariates estimates ##################################################
 full_results <- NULL
@@ -782,11 +799,11 @@ for (i in 1:length(school_subject)){
 }
 
 full_results_siblings_father_allcov <- full_results
-save(full_results_siblings_father_allcov, file = "output/full_results_siblings_father_allcov_EA_230112.rda")
+save(full_results_siblings_father_allcov,
+     file = "output/full_results_siblings_father_allcov_EA_250106.rda")
 
 
 ### 3.6.3  Get descriptive in table ######
-
 
 full_results <- NULL
 for (i in 1:length(school_subject)){
@@ -799,7 +816,8 @@ for (i in 1:length(school_subject)){
   }
 }
 covariances <- full_results
-save(covariances, file = "output/full_results_siblings_father_covariances_EA_230112.rda")
+save(covariances, 
+     file = "output/full_results_siblings_father_covariances_EA_250106.rda")
 
 full_results <- NULL
 for (i in 1:length(school_subject)){
@@ -812,7 +830,7 @@ for (i in 1:length(school_subject)){
   }
 }
 means <- full_results
-save(means, file = "output/full_results_siblings_father_means_EA_230112.rda")
+save(means, file = "output/full_results_siblings_father_means_EA_250106.rda")
 
 
 full_results <- NULL
@@ -827,22 +845,24 @@ for (i in 1:length(school_subject)){
 }
 
 descriptives <- full_results
-save(descriptives, file = "output/full_results_siblings_father_descriptives_EA_230112.rda")
+save(descriptives, 
+     file = "output/full_results_siblings_father_descriptives_EA_250106.rda")
 
 
 
 
 # 4. Simple regression in the bigger Moba sample (not only cousins) ######
 ## 4.1  All gender #####
-load("data/school_moba_kidpreg_total_211208.rda") #pregnancy relevant child, all possible
+load("data/school_moba_kidpreg_total_250103.rda")
+#pregnancy relevant child, all possible
 
 items_parents <- c("SCL5_Q1", "ADHD", "SCL8", "AUDIT")
 school_total_moba_kidpreg_NPREG05 <-school_moba_kidpreg_total %>% 
-  drop_na(std_score_NPREG05) #177519
+  drop_na(std_score_NPREG05) #182356
 school_total_moba_kidpreg_NPLES05 <-school_moba_kidpreg_total %>% 
-  drop_na(std_score_NPLES05) #175416
+  drop_na(std_score_NPLES05) #180237
 school_total_moba_kidpreg_NPENG05 <-school_moba_kidpreg_total %>%
-  drop_na(std_score_NPENG05) #176099
+  drop_na(std_score_NPENG05) #180879
 
 for (trait in 1:length(items_parents)){
   assign(paste0("results_fullMoba_NPREG05_",items_parents[trait]),
@@ -883,7 +903,8 @@ head(full_results)
 
 full_results_fullMoba_total <- full_results
 
-save(full_results_fullMoba_total, file = "output/full_results_fullMoba_total_230112.rda")
+save(full_results_fullMoba_total,
+     file = "output/full_results_fullMoba_total_250106.rda")
 
 full_results <- NULL
 for (i in 1:length(school_subject)){
@@ -900,7 +921,8 @@ for (i in 1:length(school_subject)){
 }
 
 full_results_siblings_fullMoba_allcov <- full_results
-save(full_results_siblings_fullMoba_allcov, file = "output/full_results_siblings_fullMoba_allcov_230112.rda")
+save(full_results_siblings_fullMoba_allcov,
+     file = "output/full_results_siblings_fullMoba_allcov_250106.rda")
 
 
 full_results <- NULL
@@ -914,7 +936,8 @@ for (i in 1:length(school_subject)){
   }
 }
 covariances <- full_results
-save(covariances, file = "output/full_results_siblings_FullMoba__covariances_230112.rda")
+save(covariances,
+     file = "output/full_results_siblings_FullMoba__covariances_250106.rda")
 
 full_results <- NULL
 for (i in 1:length(school_subject)){
@@ -927,7 +950,8 @@ for (i in 1:length(school_subject)){
   }
 }
 means <- full_results
-save(means, file = "output/full_results_siblings_fullMoba_means_EA_230112.rda")
+save(means, 
+     file = "output/full_results_siblings_fullMoba_means_EA_250106.rda")
 
 
 full_results <- NULL
@@ -942,13 +966,14 @@ for (i in 1:length(school_subject)){
 }
 
 descriptives <- full_results
-save(descriptives, file = "output/full_results_siblings_fullMoba_descriptives_230112.rda")
+save(descriptives, 
+     file = "output/full_results_siblings_fullMoba_descriptives_250106.rda")
 
 
 
 # 
 ## 4.2 In mothers - Eating disorders ######
-load("data/school_mother_moba_kidpreg_211124.rda")#pregnancy relevant child
+load("data/school_mother_moba_kidpreg_250103.rda")#pregnancy relevant child
 
 items_parents <- c("scale_score_items_m_ED_NRM_Q1", 
                    "scale_score_items_m_ED_NRM_Q8")
@@ -998,7 +1023,8 @@ head(full_results)
 
 full_results_fullMoba_total <- full_results
 
-save(full_results_fullMoba_total, file = "output/full_results_fullMoba_mother_230112.rda")
+save(full_results_fullMoba_total,
+     file = "output/full_results_fullMoba_mother_250106.rda")
 
 full_results <- NULL
 for (i in 1:length(school_subject)){
@@ -1015,7 +1041,8 @@ for (i in 1:length(school_subject)){
 }
 
 full_results_siblings_fullMoba_allcov <- full_results
-save(full_results_siblings_fullMoba_allcov, file = "output/full_results_siblings_fullMoba_mother_allcov_230112.rda")
+save(full_results_siblings_fullMoba_allcov,
+     file = "output/full_results_siblings_fullMoba_mother_allcov_250106.rda")
 
 
 full_results <- NULL
@@ -1029,7 +1056,8 @@ for (i in 1:length(school_subject)){
   }
 }
 covariances <- full_results
-save(covariances, file = "output/full_results_siblings_fullMoba_mother_covariances_230112.rda")
+save(covariances, 
+     file = "output/full_results_siblings_fullMoba_mother_covariances_250106.rda")
 
 full_results <- NULL
 for (i in 1:length(school_subject)){
@@ -1042,7 +1070,7 @@ for (i in 1:length(school_subject)){
   }
 }
 means <- full_results
-save(means, file = "output/full_results_siblings_fullMoba_mother_means_230112.rda")
+save(means, file = "output/full_results_siblings_fullMoba_mother_means_250106.rda")
 
 
 full_results <- NULL
@@ -1057,5 +1085,6 @@ for (i in 1:length(school_subject)){
 }
 
 descriptives <- full_results
-save(descriptives, file = "output/full_results_siblings_fullMoba_mother_descriptives_230112.rda")
+save(descriptives, 
+     file = "output/full_results_siblings_fullMoba_mother_descriptives_250106.rda")
 

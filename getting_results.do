@@ -1,6 +1,6 @@
 
 *Getting results
-estimates use "N:\durable\projects\Perline\Eating disorders data\ED1_NRM"
+estimates use "N:\durable\projects\Perline\2021_Children_siblings_MH\Eating disorders data\ED8_NRM"
 
 *You can try opening the irt window in the GUI under statistics/IRT and use the report and graph options after you have loaded the results. There it is easy to play around with the graphs.
 

@@ -1,13 +1,18 @@
 # Perline Demange 
 # Get MoBA mental health data 
 # Start date: 21/10/2021
+# Update new data 03-01-25
 
 # Set up 
 library(tidyverse)
-#library(phenotools)
-#vignette("phenotools")
-# Set up phenotools and working paths
-source('N:/data/durable/projects/Perline/Parental psychopathology and school performance/scripts/A1_profile_paths_and_packages.R')
+library(haven)
+shrd_dir="N:/durable/shared/"
+work_dir="N:/durable/projects/Perline/2021_Children_siblings_MH/Parental psychopathology and school performance/"
+#data_dir="N:/durable/data/moba/Original files/Delivery 05 2023/PDB2601_20230513/" #this folder does not have the phenotools names. 
+data_dir="N:/durable/data/moba/Original files/sav_0523/" #data managers do not know who created this folder.....
+
+#install.packages(paste0(shrd_dir,"phenotools_0.2.9.zip"), repos=NULL,  type = "binary")
+library(phenotools)
 
 # 1. In mothers ##############
 ## 1.1. Checking items/scales ############
@@ -74,7 +79,7 @@ data <- data_mother %>%
   mutate_if(is.labelled, as_factor)
 
 colnames(data)<-gsub("_raw","",colnames(data)) #remove suffixe
-
+head(data)
 
 # Recode all SCL items (anxiety and depression)
 summary(data[,items_m_SCL_Q8_full])
@@ -159,8 +164,7 @@ summary(short_data)
 # Double check, Compare with complete scales from the phenotools 
 phenotools_scl <- curate_dataset(variables_required=c("scl_full_m_8yr",
                                                       "scl_anx_m_8yr",
-                                                      "scl_dep_m_8yr",
-                                                      "asrs_full_m_3yr") ,
+                                                      "scl_dep_m_8yr") ,
                                    moba_data_root_dir=paste0(data_dir),
                                    PDB="2601",
                                    moba_data_version=12,
@@ -169,44 +173,36 @@ phenotools_scl <- curate_dataset(variables_required=c("scl_full_m_8yr",
                                    consistent_items=F,
                                    out_format="merged_df")
 
-# summary(short_data$scale_score_items_m_SCL_Q8_full)
+# > summary(short_data$scale_score_items_m_SCL_Q8_full)
 # Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-#    0.00    0.00    1.00    2.33    3.00   24.00   72228 
-# summary(phenotools_scl$scl_full_m_8yr)
-#    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-# 0.00    0.00    1.00    2.34    3.00   24.00   72228 
-
-
-# summary(short_data$scale_score_items_m_ADHD_Q3)
-#    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-# 0.00    4.00    6.00    6.56    9.00   24.00   58222 
-# summary(phenotools_scl$asrs_full_m_3yr)
+#    0.00    0.00    1.00    2.33    3.00   24.00   71755 
+#   > summary(phenotools_scl$scl_full_m_8yr)
 # Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-#    0.00    4.00    6.00    6.57    9.00   24.00   58222 
+#    0.00    0.00    1.00    2.34    3.00   24.00   71712 
+
 # 
 # > summary(phenotools_scl$scl_anx_m_8yr)
 # Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-#     0.0     0.0     0.0     0.9     1.0    12.0   72237 
-# > summary(short_data$scale_score_items_m_SCL_Q8_anx)
-#    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-# 0.0     0.0     0.0     0.9     1.0    12.0   72237 
-# > summary(phenotools_scl$scl_dep_m_8yr)
+#     0.0     0.0     0.0     0.9     1.0    12.0   71712 
+#   > summary(short_data$scale_score_items_m_SCL_Q8_anx)
 # Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-#    0.00    0.00    1.00    1.44    2.00   12.00   72235 
-# > summary(short_data$scale_score_items_m_SCL_Q8_dep)
-#    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-# 0.00    0.00    1.00    1.43    2.00   12.00   72235 
+#     0.0     0.0     0.0     0.9     1.0    12.0   71764 
+#   > summary(phenotools_scl$scl_dep_m_8yr)
+# Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+#    0.00    0.00    1.00    1.44    2.00   12.00   71718 
+#   > summary(short_data$scale_score_items_m_SCL_Q8_dep)
+# Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+#    0.00    0.00    1.00    1.43    2.00   12.00   71762 
 
-
-# Same number of NAs, Mean is sometimes off by 0.1 weirdly 
+# More NAs with home made scales compared to phenotools, Mean is sometimes off by 0.01
 
 
 ## 1.5 Save data ##################
 
 moba_data_mother <- short_data
-save(moba_data_mother, file = "data/data_moba_mother_SCL_audit_adhd.rda")
+save(moba_data_mother, file = "data/data_moba_mother_SCL_audit_adhd_250103.rda")
 
-load("data/data_moba_mother_SCL_audit_adhd.rda")
+load("data/data_moba_mother_SCL_audit_adhd_250103.rda")
 
 ## 1.6 Eating disorder score ##################
 ### 1.6.1 Part 1: get eating disorders items and code them ---------
@@ -241,7 +237,6 @@ data <- ED_data %>%
   mutate_if(is.labelled, as_factor)
 
 colnames(data)<-gsub("_raw","",colnames(data)) #remove suffixe
-head(test)
 
 # Code items 
 summary(data[,ED1_notshared])
@@ -342,16 +337,16 @@ data <- mutate_at(data,
 head(data)
 summary(data)
 
-save(data, file = "data/data_moba_mother_eatingdisorders.rda")
-write.csv2(data, "data/data_moba_mother_eatingdisorders.csv")
-load("data/data_moba_mother_eatingdisorders.rda")
+save(data, file = "data/data_moba_mother_eatingdisorders_250103.rda")
+write.csv2(data, "data/data_moba_mother_eatingdisorders_250103.csv")
+load("data/data_moba_mother_eatingdisorders_250103.rda")
 
 
 ### 1.6.2. Part 2: further selection of items and IRT -----------
 # This was done by Eivind Ystrom, code is IRT.do 
 
 ### 1.6.3. Part 3: Get IRT results with other parental traits results. -----------
-ED <- haven::read_dta("data/data_moba_mother_eatingdisorders_scores.dta")
+ED <- as.data.frame(haven::read_dta("data/data_moba_mother_eatingdisorders_scores_250103.dta"))
 head(ED)
 head(ED[,50:56])
 summary(ED$ED1_NRM_NR) # NR is all the sample
@@ -360,24 +355,32 @@ summary(ED$ED8_NRM)
 summary(ED$ED1_NRM_se)
 hist(ED$ED1_NRM)
 hist(ED$ED8_NRM)
-hist(ED$ED8_NRM_se)
+hist(ED$ED1_NRM_se)
+
+# get empirical reliability (Du toit 2003) 
+var(ED$ED1_NRM, na.rm=T)/(var(ED$ED1_NRM, na.rm=T)+ mean((ED$ED1_NRM_se^2), na.rm=T))
+var(ED$ED8_NRM, na.rm=T)/(var(ED$ED8_NRM, na.rm=T)+ mean((ED$ED8_NRM_se^2), na.rm=T))
 
 ED_short <- ED[c("preg_id", "m_id", "f_id", "barn_nr", "ED1_NRM", "ED8_NRM")]
 ED_short <- rename(ED_short, BARN_NR=barn_nr)
 
 # Merge with moba_data_mother
-head(ED_short)
+head(ED_short) #114012
 head(moba_data_mother[,1:5])
 #There is a weird thing happening with ED -> the birth_yr has the zero removed, it is 29 instead of 2009
 #I guess it might be a format conversion issue 
+#Update: this error was not present in the update
+
+
 
 ED_short$preg_id <- as.character(ED_short$preg_id)
+
 moba_data_mother_all <- merge(moba_data_mother, ED_short,
-                              by=c("preg_id", "m_id", "f_id", "BARN_NR"))
+                              by=c("preg_id", "m_id", "f_id",  "BARN_NR"))
 
 moba_data_mother[!(moba_data_mother$preg_id %in% moba_data_mother_all$preg_id),][,1:6]
 ED[!(ED$preg_id %in% moba_data_mother_all$preg_id),][,1:6]
-# When merging I lose 3 rows
+# When merging I lose about 3 rows
 # I can find two rows missing from the same pregnancy and it is a row with fully missing data 
 # I am still missing why one additional row is missing 
 
@@ -387,7 +390,8 @@ moba_data_mother_all <- rename(moba_data_mother_all,
 moba_data_mother_all <- rename(moba_data_mother_all,
                                scale_score_items_m_ED_NRM_Q8 = ED8_NRM)
 
-save(moba_data_mother_all, file = "data/data_moba_mother_SCL_audit_adhd_ed.rda")
+save(moba_data_mother_all, file = "data/data_moba_mother_SCL_audit_adhd_ed_250103.rda")
+load("data/data_moba_mother_SCL_audit_adhd_ed_250103.rda")
 
 # 2. Fathers ##################
 ## 2.1 Describe mental health measures ####
@@ -544,43 +548,36 @@ summary(short_data)
 
 
 # Double check, Compare with complete scales from the phenotools 
-phenotools_scl <- curate_dataset(variables_required=c("asrs_full_f_far", 
-                                                      "scl_full_f_far", 
-                                                      "scl_anx_f_far", 
-                                                      "scl_dep_f_far", 
-                                                      "scl_full_f_far2",
-                                                      "scl_anx_f_far2", 
-                                                      "scl_dep_f_far2") ,
-                                 moba_data_root_dir=paste0(data_dir),
-                                 PDB="2601",
-                                 moba_data_version=12,
-                                 completion_threshold=0.75,
-                                 return_items=F, 
-                                 consistent_items=F,
-                                 out_format="merged_df")
+# I get some issues with phenotools during the update, so I do not compare but only check the summary fo our data looks ok
+
+# phenotools_scl <- curate_dataset(variables_required=c("scl_anx_f_far",
+#                      "scl_dep_f_far",
+#                      "scl_full_f_far2",
+#                      "scl_anx_f_far2",
+#                      "scl_dep_f_far2") ,
+# moba_data_root_dir=paste0(data_dir),
+# PDB="2601",
+# moba_data_version=12,
+# completion_threshold=0.75,
+# return_items=F,
+# consistent_items=F,
+# out_format="merged_df")
 
 # summary(short_data$scale_score_items_f_SCL_Q1_full)
 # Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-#0.00    0.00    0.00    1.17    2.00   24.00   36870 
-# summary(phenotools_scl$scl_full_f_far)
-#  Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-#0.00    0.00    0.00    1.18    2.00   24.00   36870 
+#    0.00    0.00    0.00    1.17    2.00   24.00   36731 
+# 
+# > summary(short_data$scale_score_items_f_SCL_Q2015_full)
+# Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+#    0.00    0.00    1.00    1.87    3.00   24.00   79055 
+# > summary(short_data$scale_score_items_f_ADHD_Q1)
+#    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+# 0.00    6.00    8.00    8.22   10.00   24.00   79488 
 
-# summary(short_data$scale_score_items_f_SCL_Q2015_full)
-# Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-#    0.00    0.00    1.00    1.87    3.00   24.00   79520 
-# summary(phenotools_scl$scl_full_f_far2) # this is SCL12
-
-# summary(short_data$scale_score_items_f_ADHD_Q1)
-# Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-#    0.00    6.00    8.00    8.22   10.00   24.00   79983 
-# summary(phenotools_scl$asrs_full_f_far)
-# Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-#    0.00    6.00    8.00    8.23   10.00   24.00   79983 
 
 
 ## 2.5 Save data ##################
 moba_data_father <- short_data
-save(moba_data_father, file = "data/data_moba_father_SCL_audit_adhd.rda")
+save(moba_data_father, file = "data/data_moba_father_SCL_audit_adhd_250103.rda")
 
 load("data/data_moba_father_SCL_audit_adhd.rda")

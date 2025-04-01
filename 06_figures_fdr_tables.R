@@ -15,7 +15,7 @@ trace(ggplot2:::guide_grid, edit=TRUE)
 #1. Figure 2. +  FDR pvalues ######
 
 # load all siblings results 
-load("output/full_results_siblings_total_230109.rda") 
+load("output/full_results_siblings_total_250106.rda") 
 
 #weirdly t.value and p.value are not written the same 
 full_results_siblings_total <- full_results_siblings_total %>% 
@@ -26,7 +26,7 @@ full_results_siblings_total <- full_results_siblings_total %>%
 
 
 # load mothers results for eating disorder symptoms 
-load("output/full_results_siblings_mother_2301012.rda")
+load("output/full_results_siblings_mother_250106.rda")
 
 full_results_siblings_mother <- full_results_siblings_mother %>% 
   rename(
@@ -45,9 +45,9 @@ full_results <- rbind(full_results_siblings_mother, full_results_siblings_total)
 
 
 # Load results adjusted for EA
-load("output/full_results_siblings_total_EA_230109.rda") # new 
+load("output/full_results_siblings_total_EA_250106.rda") # new 
 full_results_siblings_total_EA <- full_results_siblings_total
-load("output/full_results_siblings_mother_EA_230112.rda")
+load("output/full_results_siblings_mother_EA_250106.rda")
 full_results_siblings_EA <- full_results_siblings_mother
 full_results_siblings_EA <- full_results_siblings_EA[
   which(full_results_siblings_EA$parental_trait ==
@@ -70,7 +70,7 @@ results_plot <- rbind(full_EA, full_results)
 results_plot <- results_plot %>%
   group_by(estimates) %>% 
   mutate("p.value.fdr" = p.adjust(p.value, method="fdr"))
-write.csv2(results_plot, "main_results_allsex_fdr_230112.csv")
+write.csv2(results_plot, "main_results_allsex_fdr_250106.csv")
 
 
 # Remove between effects as we do not plot it 
@@ -79,7 +79,7 @@ results_plot <- results_plot[results_plot$estimates %in%
                                  "Within_effect_EA"),]
 
 
-# run one of the three versions 
+#### run one of the three versions  ############################
 ## 1.1 Version with EA adjusted #######
 # create factors to fix order and rename 
 results_plot$estimates <- factor(results_plot$estimates, 
@@ -93,10 +93,12 @@ results_plot$school_subject <- factor(results_plot$school_subject,
 
 
 results_plot$parental_trait <- factor(results_plot$parental_trait,
-                                      levels = c("scale_score_items_m_ED_NRM_Q8","scale_score_items_m_ED_NRM_Q1",
+                                      levels = c("scale_score_items_m_ED_NRM_Q8",
+                                                 "scale_score_items_m_ED_NRM_Q1",
                                                   "ADHD","AUDIT",
                                                   "SCL8", "SCL5_Q1"), 
-                                      labels = c("Eating disorder","Eating disorder in pregnancy",
+                                      labels = c("Eating disorder",
+                                                 "Eating disorder in pregnancy",
                                                  "ADHD","Alcohol problematic use",
                                                  "Anx/Dep", "Anx/Dep in pregnancy"
                                                  ))
@@ -104,7 +106,7 @@ results_plot$parental_trait <- factor(results_plot$parental_trait,
 
 
 # Create figure 
-png("output/figure1_0112.png", width= 1800, height=1200)
+png("output/figure1_250106.png", width= 1800, height=1200)
 ggplot(results_plot, aes(x=parental_trait, y=Value, fill=estimates)) + 
   geom_bar(position=position_dodge(0.9), stat="identity") +
   geom_errorbar(aes(ymin= Value - 1.96 * Std.Error, ymax=Value + 1.96 * Std.Error),
@@ -141,10 +143,12 @@ results_plot$school_subject <- factor(results_plot$school_subject,
 
 
 results_plot$parental_trait <- factor(results_plot$parental_trait,
-                                      levels = c("scale_score_items_m_ED_NRM_Q8","scale_score_items_m_ED_NRM_Q1",
+                                      levels = c("scale_score_items_m_ED_NRM_Q8",
+                                                 "scale_score_items_m_ED_NRM_Q1",
                                                  "ADHD","AUDIT",
                                                  "SCL8", "SCL5_Q1"), 
-                                      labels = c("Eating disorder","Eating disorder in pregnancy",
+                                      labels = c("Eating disorder",
+                                                 "Eating disorder in pregnancy",
                                                  "ADHD","Alcohol problematic use",
                                                  "Anx/Dep", "Anx/Dep in pregnancy"
                                       ))
@@ -152,7 +156,7 @@ results_plot$parental_trait <- factor(results_plot$parental_trait,
 
 
 # Create figure 
-png("output/figure1_0112.png", width= 1800, height=1200)
+png("output/figure1_250106.png", width= 1800, height=1200)
 ggplot(results_plot, aes(x=parental_trait, y=Value, col=estimates, fill=estimates)) + 
   geom_hline(yintercept=0, colour="grey", size=1)+
   geom_point(position=position_dodge2(width=.7, preserve = "single"),
@@ -185,9 +189,9 @@ dev.off()
 
 
 ## 1.3 Version with full Moba pop as well ####
-load("output/full_results_fullMoba_total_230112.rda")
+load("output/full_results_fullMoba_total_250106.rda")
 fullmoba <- full_results_fullMoba_total
-load("output/full_results_fullMoba_mother_230112.rda")
+load("output/full_results_fullMoba_mother_250106.rda")
 fullmobamother <- full_results_fullMoba_total
 
 fullmoba_plot <- rbind(fullmoba, fullmobamother)
@@ -195,7 +199,7 @@ fullmoba_plot <- rbind(fullmoba, fullmobamother)
 # Create fdr-corrected pvalues 
 fullmoba_plot <- fullmoba_plot %>%
   mutate("p.value.fdr" = p.adjust(p.value, method="fdr"))
-write.csv2(fullmoba_plot, "fullmoba_results_fdr_230112.csv")
+write.csv2(fullmoba_plot, "fullmoba_results_fdr_250106.csv")
 
 # combine 
 results_plot <- results_plot[!(results_plot$estimates == "Within_effect_EA"),]
@@ -222,10 +226,12 @@ results_plot$school_subject <- factor(results_plot$school_subject,
 
 
 results_plot$parental_trait <- factor(results_plot$parental_trait,
-                                      levels = c("scale_score_items_m_ED_NRM_Q8","scale_score_items_m_ED_NRM_Q1",
+                                      levels = c("scale_score_items_m_ED_NRM_Q8",
+                                                 "scale_score_items_m_ED_NRM_Q1",
                                                  "ADHD","AUDIT",
                                                  "SCL8", "SCL5_Q1"), 
-                                      labels = c("Eating disorder","Eating disorder in pregnancy",
+                                      labels = c("Eating disorder",
+                                                 "Eating disorder in pregnancy",
                                                  "ADHD","Alcohol problematic use",
                                                  "Anx/Dep", "Anx/Dep in pregnancy"
                                       ))
@@ -268,13 +274,13 @@ dev.off()
 
 #2. Table 1. & co. Print tables and do average for main results #####
 ## 2.1 Descriptive statistics ####
-load("output/full_results_siblings_total_descriptives_230109.rda")
+load("output/full_results_siblings_total_descriptives_250106.rda")
 descriptives_all <- descriptives
-load("output/full_results_siblings_total_descriptives_EA_230109.rda")
+load("output/full_results_siblings_total_descriptives_EA_250106.rda")
 descriptives_all_EA <- descriptives
-load("output/full_results_siblings_mother_descriptives_230112.rda")
+load("output/full_results_siblings_mother_descriptives_250106.rda")
 descriptives_mother <- descriptives
-load("output/full_results_siblings_mother_descriptives_EA_230112.rda")
+load("output/full_results_siblings_mother_descriptives_EA_250106.rda")
 descriptives_mother_EA <- descriptives
 
 descriptives_all$group <- "all"
@@ -282,7 +288,8 @@ descriptives_all_EA$group <- "all_EA"
 descriptives_mother$group <- "mother"
 descriptives_mother_EA$group <- "mother_EA"
 
-descriptives <- rbind(descriptives_all, descriptives_all_EA, descriptives_mother, descriptives_mother_EA)
+descriptives <- rbind(descriptives_all, descriptives_all_EA,
+                      descriptives_mother, descriptives_mother_EA)
 
 # keep only main results (remove extra mothers')
 descriptives <- descriptives[descriptives$trait %in% c("SCL5_Q1", 
@@ -344,13 +351,13 @@ dev.off()
 
 
 ## 2.4 Means ####
-load("output/full_results_siblings_total_means_230109.rda")
+load("output/full_results_siblings_total_means_250106.rda")
 means_all <- means
-load("output/full_results_siblings_total_means_EA_230109.rda")
+load("output/full_results_siblings_total_means_EA_250106.rda")
 means_all_EA <- means
-load("output/full_results_siblings_mother_means_230112.rda")
+load("output/full_results_siblings_mother_means_250106.rda")
 means_mother <- means
-load("output/full_results_siblings_mother_means_EA_230112.rda")
+load("output/full_results_siblings_mother_means_EA_250106.rda")
 means_mother_EA <- means
 
 means_all$group <- "all"
@@ -391,9 +398,9 @@ dev.off()
 ## 2.6 Make part of Table 1A: number of families + ICC ######
 
 # load all siblings results 
-load("output/full_results_siblings_total_230109.rda") 
+load("output/full_results_siblings_total_250106.rda") 
 # load mothers results for eating disorder symptoms 
-load("output/full_results_siblings_mother_2301012.rda")
+load("output/full_results_siblings_mother_250106.rda")
 
 full_results_siblings_mother <- full_results_siblings_mother[
   which(full_results_siblings_mother$parental_trait ==
@@ -402,8 +409,14 @@ full_results_siblings_mother <- full_results_siblings_mother[
           "scale_score_items_m_ED_NRM_Q8"), ]
 head(full_results_siblings_mother)
 
-numfam <- rbind(full_results_siblings_total[,c("parental_trait", "sample_size", "ICC", "number_of_families")], 
-                full_results_siblings_mother[,c("parental_trait", "sample_size", "ICC", "number_of_families")])
+numfam <- rbind(full_results_siblings_total[,c("parental_trait", 
+                                               "sample_size", 
+                                               "ICC",
+                                               "number_of_families")], 
+                full_results_siblings_mother[,c("parental_trait",
+                                                "sample_size",
+                                                "ICC", 
+                                                "number_of_families")])
 
 table2asample <- numfam %>%
   group_by(parental_trait) %>%
@@ -418,9 +431,9 @@ dev.off()
 # 3. Prepare tables for Supplementary Tables #####
 ## 3.1 Fullmoba ######
 ### 3.1.1 Descriptives ########
-load("output/full_results_siblings_fullMoba_descriptives_230112.rda")
+load("output/full_results_siblings_fullMoba_descriptives_250106.rda")
 descriptives_all <- descriptives
-load("output/full_results_siblings_fullMoba_mother_descriptives_230112.rda")
+load("output/full_results_siblings_fullMoba_mother_descriptives_250106.rda")
 descriptives_mother <- descriptives
 descriptives_all$group <- "all"
 descriptives_mother$group <- "mother"
@@ -461,9 +474,9 @@ gridExtra::grid.arrange(p)
 dev.off()
 
 #Means
-load("output/full_results_siblings_fullMoba_means_EA_230112.rda")
+load("output/full_results_siblings_fullMoba_means_EA_250106.rda")
 means_all <- means
-load("output/full_results_siblings_fullMoba_mother_means_230112.rda")
+load("output/full_results_siblings_fullMoba_mother_means_250106.rda")
 means_mother <- means
 
 means_all$group <- "all"
@@ -492,12 +505,13 @@ dev.off()
 
 ## 3.2 Mothers only #####
 ### 3.2.1 Results & figure #####
-load("output/full_results_siblings_mother_2301012.rda")
+load("output/full_results_siblings_mother_250106.rda")
 full_results_siblings_mother1 <- full_results_siblings_mother
-load("output/full_results_siblings_mother_EA_230112.rda")
-full_results_siblings_mother$estimates <- paste(full_results_siblings_mother$estimates, "_EA", sep="")
+load("output/full_results_siblings_mother_EA_250106.rda")
+full_results_siblings_mother$estimates <- paste(full_results_siblings_mother$estimates,
+                                                "_EA", sep="")
 results_plot <- rbind(full_results_siblings_mother1, full_results_siblings_mother)
-#write.csv2(results_plot, "core_results_mothers.csv")
+write.csv2(results_plot, "core_results_mothers.csv")
 
 results_plot$estimates <- factor(results_plot$estimates, 
                                  levels = c("Within_effect_EA", 
@@ -584,9 +598,9 @@ dev.off()
 
 
 ### 3.2.2 Descriptives ######
-load("output/full_results_siblings_mother_descriptives_230112.rda")
+load("output/full_results_siblings_mother_descriptives_250106.rda")
 descriptives_mother <- descriptives
-load("output/full_results_siblings_mother_descriptives_EA_230112.rda")
+load("output/full_results_siblings_mother_descriptives_EA_250106.rda")
 descriptives_mother_EA <- descriptives
 
 descriptives_mother$group <- "mother"
@@ -607,9 +621,9 @@ write.csv2(ac_skills, "descriptive_ac_skills_mothers.csv")
 write.csv2(parentsmh, "descriptive_parentsmh_mothers.csv")
 
 
-load("output/full_results_siblings_mother_means_230112.rda")
+load("output/full_results_siblings_mother_means_250106.rda")
 means_mother <- means
-load("output/full_results_siblings_mother_means_EA_230112.rda")
+load("output/full_results_siblings_mother_means_EA_250106.rda")
 means_mother_EA <- means
 
 
@@ -625,12 +639,13 @@ write.csv2(meanswide, "means_mothers.csv")
 
 ## 3.3 Fathers only #######
 ### 3.3.1 Results & figure #####
-load("output/full_results_siblings_father_2301012.rda")
+load("output/full_results_siblings_father_250106.rda")
 full_results_siblings_father1 <- full_results_siblings_father
-load("output/full_results_siblings_father_EA_230112.rda")
-full_results_siblings_father$estimates <- paste(full_results_siblings_father$estimates, "_EA", sep="")
+load("output/full_results_siblings_father_EA_250106.rda")
+full_results_siblings_father$estimates <- paste(full_results_siblings_father$estimates,
+                                                "_EA", sep="")
 results_plot <- rbind(full_results_siblings_father1, full_results_siblings_father)
-#write.csv2(results_plot, "core_results_fathers.csv")
+write.csv2(results_plot, "core_results_fathers.csv")
 
 results_plot$estimates <- factor(results_plot$estimates, 
                                  levels = c("Within_effect_EA", 
@@ -714,9 +729,9 @@ ggplot(results_plot, aes(x=parental_trait, y=Value, col=estimates, fill=estimate
 dev.off()
 
 ### 3.3.2 Descriptives ######
-load("output/full_results_siblings_father_descriptives_230112.rda")
+load("output/full_results_siblings_father_descriptives_250106.rda")
 descriptives_father <- descriptives
-load("output/full_results_siblings_father_descriptives_EA_230112.rda")
+load("output/full_results_siblings_father_descriptives_EA_250106.rda")
 descriptives_father_EA <- descriptives
 
 descriptives_father$group <- "father"
@@ -737,9 +752,9 @@ write.csv2(ac_skills, "descriptive_ac_skills_fathers.csv")
 write.csv2(parentsmh, "descriptive_parentsmh_fathers.csv")
 
 
-load("output/full_results_siblings_father_means_230112.rda")
+load("output/full_results_siblings_father_means_250106.rda")
 means_father <- means
-load("output/full_results_siblings_father_means_EA_230112.rda")
+load("output/full_results_siblings_father_means_EA_250106.rda")
 means_father_EA <- means
 
 
@@ -754,29 +769,30 @@ head(meanswide)
 write.csv2(meanswide, "means_fathers.csv")
 
 ## 3.4 Save covariances #####
-load("output/full_results_siblings_total_covariances_230109.rda")
+load("output/full_results_siblings_total_covariances_250106.rda")
 write.csv2(covariances, "covariances_main.csv")
-load("output/full_results_siblings_total_covariances_EA_230109.rda")
+load("output/full_results_siblings_total_covariances_EA_250106.rda")
 write.csv2(covariances, "covariances_mainEA.csv")
-load("output/full_results_siblings_mother_covariances_230112.rda")
+load("output/full_results_siblings_mother_covariances_250106.rda")
 write.csv2(covariances, "covariances_mother.csv")
-load("output/full_results_siblings_mother_covariances_EA_230112.rda")
+load("output/full_results_siblings_mother_covariances_EA_250106.rda")
 write.csv2(covariances, "covariances_motherEA.csv")
-load("output/full_results_siblings_father_covariances_230112.rda")
+load("output/full_results_siblings_father_covariances_250106.rda")
 write.csv2(covariances, "covariances_father.csv")
-load("output/full_results_siblings_father_covariances_EA_230112.rda")
+load("output/full_results_siblings_father_covariances_EA_250106.rda")
 write.csv2(covariances, "covariances_fatherEA.csv")
-load("output/full_results_siblings_FullMoba__covariances_230112.rda")
+load("output/full_results_siblings_FullMoba__covariances_250106.rda")
 write.csv2(covariances, "covariances_fullMoba.csv")
-load("output/full_results_siblings_fullMoba_mother_covariances_230112.rda")
+load("output/full_results_siblings_fullMoba_mother_covariances_250106.rda")
 write.csv2(covariances, "covariances_fullMoba_mother.csv")
 
 
 # 4. Figures and tables summarizing the covariates effects #### 
-load("output/full_results_siblings_total_allcov_230109.rda")
+load("output/full_results_siblings_total_allcov_250106.rda")
 #write.csv2(full_results_siblings_total_allcov, "covariates_effects_main.csv")
 plot_pop <- full_results_siblings_total_allcov
-plot_pop <- plot_pop[(plot_pop$estimates == "sib_parent" | plot_pop$estimates == "sib_parent1"), ]
+plot_pop <- plot_pop[(plot_pop$estimates == "sib_parent" |
+                        plot_pop$estimates == "sib_parent1"), ]
 
 png("output/figure_comparison_siblings_sexparents_total.png", width= 1400, height=600)
 ggplot(plot_pop, aes(x=parental_trait, y=Value, fill=model)) + 
@@ -794,7 +810,8 @@ ggplot(plot_pop, aes(x=parental_trait, y=Value, fill=model)) +
 dev.off()
 
 
-plot_pop <- plot_pop[(plot_pop$estimates == "birth_yr"| plot_pop$estimates == "birth_yr1"), ]
+plot_pop <- plot_pop[(plot_pop$estimates == "birth_yr"|
+                        plot_pop$estimates == "birth_yr1"), ]
 
 png("output/figure_comparison_siblings_birthyear_total.png", width= 1400, height=600)
 ggplot(plot_pop, aes(x=parental_trait, y=Value,fill=model)) + 
@@ -814,7 +831,8 @@ ggplot(plot_pop, aes(x=parental_trait, y=Value,fill=model)) +
 dev.off()
 
 #year of birth of mother
-plot_pop <- plot_pop[(plot_pop$estimates == "mother_birthyear"| plot_pop$estimates == "mother_birthyear1"), ]
+plot_pop <- plot_pop[(plot_pop$estimates == "mother_birthyear"|
+                        plot_pop$estimates == "mother_birthyear1"), ]
 
 png("output/figure_comparison_siblings_motherbirthyear_total.png", width= 1400, height=600)
 ggplot(plot_pop, aes(x=parental_trait, y=Value, fill=model)) + 
@@ -832,7 +850,8 @@ ggplot(plot_pop, aes(x=parental_trait, y=Value, fill=model)) +
 dev.off()
 
 #year of birth of father
-plot_pop <- plot_pop[(plot_pop$estimates == "father_birthyear"| plot_pop$estimates == "father_birthyear1"), ]
+plot_pop <- plot_pop[(plot_pop$estimates == "father_birthyear"|
+                        plot_pop$estimates == "father_birthyear1"), ]
 
 png("output/figure_comparison_siblings_fatherbirthyear_total.png", width= 1400, height=600)
 ggplot(plot_pop, aes(x=parental_trait, y=Value, fill=model)) + 
@@ -851,7 +870,8 @@ dev.off()
 
 #sex
 plot_pop <- full_results_siblings_total_allcov
-plot_pop <- plot_pop[(plot_pop$estimates == "sex" | plot_pop$estimates == "sex1"), ]
+plot_pop <- plot_pop[(plot_pop$estimates == "sex" |
+                        plot_pop$estimates == "sex1"), ]
 
 png("output/figure_comparison_siblings_sex_total.png", width= 1400, height=600)
 ggplot(plot_pop, aes(x=parental_trait, y=Value, fill=model)) + 
@@ -869,13 +889,14 @@ ggplot(plot_pop, aes(x=parental_trait, y=Value, fill=model)) +
 dev.off()
 
 #save others full results to csv 
-load("output/full_results_siblings_total_allcov_EA_230109.rda")
+load("output/full_results_siblings_total_allcov_EA_250106.rda")
 plot_pop_ea <- full_results_siblings_total_allcov
 plot_pop_ea$model <- paste(plot_pop_ea$model, "_EA", sep="")
 write.csv2(plot_pop_ea, "covariates_effects_mainEA.csv")
 
 #plot education 
-plot_pop <- plot_pop_ea[(plot_pop_ea$estimates == "mother_EduYears11_2018" | plot_pop_ea$estimates == "mother_EduYears11_20181"), ]
+plot_pop <- plot_pop_ea[(plot_pop_ea$estimates == "mother_EduYears11_2023" |
+                           plot_pop_ea$estimates == "mother_EduYears11_20231"), ]
 
 png("output/figure_comparison_siblings_motherEA_total.png", width= 1400, height=600)
 ggplot(plot_pop, aes(x=parental_trait, y=Value, fill=model)) + 
@@ -892,7 +913,8 @@ ggplot(plot_pop, aes(x=parental_trait, y=Value, fill=model)) +
   theme(axis.text.x = element_text(size = 12, angle=45, hjust = 1)) #+
 dev.off()
 
-plot_pop <- plot_pop_ea[(plot_pop_ea$estimates == "father_EduYears11_2018" | plot_pop_ea$estimates == "father_EduYears11_20181"), ]
+plot_pop <- plot_pop_ea[(plot_pop_ea$estimates == "father_EduYears11_2023" | 
+                           plot_pop_ea$estimates == "father_EduYears11_20231"), ]
 
 png("output/figure_comparison_siblings_fatherEA_total.png", width= 1400, height=600)
 ggplot(plot_pop, aes(x=parental_trait, y=Value, fill=model)) + 
@@ -910,28 +932,31 @@ ggplot(plot_pop, aes(x=parental_trait, y=Value, fill=model)) +
 dev.off()
 
 # in mothers 
-load("output/full_results_siblings_mother_allcov_230112.rda")
+load("output/full_results_siblings_mother_allcov_250106.rda")
 write.csv2(full_results_siblings_mother_allcov, "covariates_effects_mothers.csv")
 
-load("output/full_results_siblings_mother_allcov_EA_230112.rda")
-full_results_siblings_mother_allcov$model <- paste(full_results_siblings_mother_allcov$model, "_EA", sep="")
+load("output/full_results_siblings_mother_allcov_EA_250106.rda")
+full_results_siblings_mother_allcov$model <- paste(full_results_siblings_mother_allcov$model,
+                                                   "_EA", sep="")
 write.csv2(full_results_siblings_mother_allcov, "covariates_effects_mothersEA.csv")
 
 
 #in fathers 
-load("output/full_results_siblings_father_allcov_230112.rda")
+load("output/full_results_siblings_father_allcov_250106.rda")
 write.csv2(full_results_siblings_father_allcov, "covariates_effects_fathers.csv")
 
-load("output/full_results_siblings_father_allcov_EA_230112.rda")
-full_results_siblings_father_allcov$model <- paste(full_results_siblings_father_allcov$model, "_EA", sep="")
+load("output/full_results_siblings_father_allcov_EA_250106.rda")
+full_results_siblings_father_allcov$model <- paste(full_results_siblings_father_allcov$model,
+                                                   "_EA", sep="")
 write.csv2(full_results_siblings_father_allcov, "covariates_effects_fathersEA.csv")
 
 #in fullmoba 
-load("output/full_results_siblings_fullMoba_allcov_230112.rda")
+load("output/full_results_siblings_fullMoba_allcov_250106.rda")
 full_results_siblings_fullMoba_allcovall <- full_results_siblings_fullMoba_allcov
-load("output/full_results_siblings_fullMoba_mother_allcov_230112.rda")
+load("output/full_results_siblings_fullMoba_mother_allcov_250106.rda")
 full_results_siblings_fullMoba_allcovmo <- full_results_siblings_fullMoba_allcov
-full_results_siblings_fullMoba_allcov <- rbind(full_results_siblings_fullMoba_allcovall, full_results_siblings_fullMoba_allcovmo)
+full_results_siblings_fullMoba_allcov <- rbind(full_results_siblings_fullMoba_allcovall, 
+                                               full_results_siblings_fullMoba_allcovmo)
 write.csv2(full_results_siblings_fullMoba_allcov, "covariates_effects_fullmoba.csv")
 
 

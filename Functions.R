@@ -106,7 +106,7 @@ run_analyses_cross <- function(data, school_performance, trait, onekid) {
   
 
   # plot the data 
-  htop <- ggplot(data=data, aes(x=school_perf)) + 
+  htop <- ggplot(data=data, aes(x=parent_outcome)) + 
     geom_histogram(aes(y=..density..), fill = "white", 
                    color = "black", binwidth = 1) + 
     #stat_density(colour = "blue", geom="line", size = 1.5, position="identity", show_guide=FALSE) +
@@ -121,7 +121,7 @@ run_analyses_cross <- function(data, school_performance, trait, onekid) {
           panel.grid=element_blank(),
           axis.text.x=element_blank(), axis.text.y=element_blank(), 
           axis.title.x=element_blank(), axis.title.y=element_blank())
-  hright <- ggplot(data=data, aes(x=parent_outcome)) + 
+  hright <- ggplot(data=data, aes(x=school_perf)) + 
     geom_histogram(aes(y=..density..), fill = "white", color = "black", binwidth = 1) + 
     #stat_density(colour = "red", geom="line", size = 1, position="identity", show_guide=FALSE) +
     stat_function(fun = dnorm, n = 101, 
@@ -132,13 +132,10 @@ run_analyses_cross <- function(data, school_performance, trait, onekid) {
     theme(axis.title.y = element_blank())
 
   quantile_plot <-
-    ggplot(data= data,aes( y=parent_outcome ,x= school_perf)) +
+    ggplot(data= data,aes( y=school_perf ,x= parent_outcome)) +
     geom_quantile(method = "rqss", lambda = 0.4) +
-    theme_light()+
-    xlab(school_performance)+
-    ylab(trait)
-  
-  
+    theme_light()
+
   figure <- arrangeGrob(htop, blank, quantile_plot, hright, ncol=2, nrow=2, widths=c(4, 1), heights=c(1, 4))
   ggsave(file=paste0(school_performance,"_",trait,".png"), figure)
 
@@ -214,8 +211,8 @@ run_analyses_cross_EA <- function(data, school_performance, trait, onekid) {
   
   data <- data[!is.na(data$father_birthyear),]
   data <- data[!is.na(data$mother_birthyear),]
-  data <- data[!is.na(data$mother_EduYears11_2018),]
-  data <- data[!is.na(data$father_EduYears11_2018),]
+  data <- data[!is.na(data$mother_EduYears11_2023),]
+  data <- data[!is.na(data$father_EduYears11_2023),]
   data <- data %>%
     group_by(shared_grandparents_id) %>%
     filter(length(unique(sib_parent_id))>1)
@@ -240,12 +237,13 @@ run_analyses_cross_EA <- function(data, school_performance, trait, onekid) {
   # mean, sd, skew and covariances 
   
   descriptives <- as.data.frame(describe(cbind(data$parent_outcome, data$school_perf)))
+  descriptives <- as.data.frame(describe(cbind(data$parent_outcome, data$school_perf)))
   descriptives$vars <- c(trait, school_performance)
   
   covariances <- cov(cbind(data$school_perf, data$parent_outcome, 
                            data$birth_yr, data$father_birthyear, data$mother_birthyear, 
                            data$sex, data$sib_parent, 
-                           data$mother_EduYears11_2018, data$father_EduYears11_2018))
+                           data$mother_EduYears11_2023, data$father_EduYears11_2023))
   rowname <- c("school_perf", "parent_outcome", 
                "birth_yr", 
                "father_birthyear", "mother_birthyear", 
@@ -255,7 +253,7 @@ run_analyses_cross_EA <- function(data, school_performance, trait, onekid) {
   means <- colMeans(cbind(data$school_perf, data$parent_outcome, 
                           data$birth_yr, data$father_birthyear, data$mother_birthyear, 
                           data$sex, data$sib_parent, 
-                          data$mother_EduYears11_2018, data$father_EduYears11_2018))
+                          data$mother_EduYears11_2023, data$father_EduYears11_2023))
   means <- cbind(as.data.frame(means), rowname)
   
   # ICC
@@ -321,7 +319,7 @@ run_analyses_cross_EA <- function(data, school_performance, trait, onekid) {
   modpop<-lme(school_perf ~ parent_outcome + 
                 birth_yr + father_birthyear + mother_birthyear +
                 sex + sib_parent +
-                mother_EduYears11_2018 + father_EduYears11_2018,
+                mother_EduYears11_2023 + father_EduYears11_2023,
               random=~1|shared_grandparents_id,
               na.action=na.omit,
               data=finalsib)
@@ -331,7 +329,7 @@ run_analyses_cross_EA <- function(data, school_performance, trait, onekid) {
   modwithin<-lme(school_perf ~ within_pheno + between_pheno +
                    birth_yr + father_birthyear + mother_birthyear +
                    sex + sib_parent +
-                   mother_EduYears11_2018 + father_EduYears11_2018,
+                   mother_EduYears11_2023 + father_EduYears11_2023,
                  random=~1|shared_grandparents_id,
                  na.action=na.omit,
                  data=finalsib)
@@ -431,7 +429,7 @@ run_analyses_mother <- function(data, school_performance, trait, onekid) {
   
   
   # plot the data 
-  htop <- ggplot(data=data, aes(x=school_perf)) + 
+  htop <- ggplot(data=data, aes(x=parent_outcome)) + 
     geom_histogram(aes(y=..density..), fill = "white", 
                    color = "black", binwidth = 1) + 
     #stat_density(colour = "blue", geom="line", size = 1.5, position="identity", show_guide=FALSE) +
@@ -446,7 +444,7 @@ run_analyses_mother <- function(data, school_performance, trait, onekid) {
           panel.grid=element_blank(),
           axis.text.x=element_blank(), axis.text.y=element_blank(), 
           axis.title.x=element_blank(), axis.title.y=element_blank())
-  hright <- ggplot(data=data, aes(x=parent_outcome)) + 
+  hright <- ggplot(data=data, aes(x=school_perf)) + 
     geom_histogram(aes(y=..density..), fill = "white", color = "black", binwidth = 1) + 
     #stat_density(colour = "red", geom="line", size = 1, position="identity", show_guide=FALSE) +
     stat_function(fun = dnorm, n = 101, 
@@ -457,11 +455,10 @@ run_analyses_mother <- function(data, school_performance, trait, onekid) {
     theme(axis.title.y = element_blank())
   
   quantile_plot <-
-    ggplot(data= data,aes( y=parent_outcome ,x= school_perf)) +
+    ggplot(data= data,aes( y=school_perf ,x= parent_outcome)) +
     geom_quantile(method = "rqss", lambda = 0.4) +
-    theme_light()+
-    xlab(school_performance)+
-    ylab(trait)
+    theme_light()
+
   
   figure <- arrangeGrob(htop, blank, quantile_plot, hright, ncol=2, nrow=2, widths=c(4, 1), heights=c(1, 4))
   ggsave(file=paste0(school_performance,"_",trait,"_mother.png"), figure)
@@ -536,7 +533,7 @@ run_analyses_mother_EA <- function(data, school_performance, trait, onekid) {
   # Ideally I cna find all missing data in additional MOba surveys
   
   data <- data[!is.na(data$mother_birthyear),]
-  data <- data[!is.na(data$mother_EduYears11_2018),]
+  data <- data[!is.na(data$mother_EduYears11_2023),]
   data <- data %>%
     group_by(maternal_grandparents) %>%
     filter(length(unique(mother_lnr))>1)
@@ -563,7 +560,7 @@ run_analyses_mother_EA <- function(data, school_performance, trait, onekid) {
   covariances <- cov(cbind(data$school_perf, data$parent_outcome, 
                            data$birth_yr,  data$mother_birthyear, 
                            data$sex, 
-                           data$mother_EduYears11_2018))
+                           data$mother_EduYears11_2023))
   rowname <- c("school_perf", "parent_outcome", 
                "birth_yr", 
                "mother_birthyear", 
@@ -572,7 +569,7 @@ run_analyses_mother_EA <- function(data, school_performance, trait, onekid) {
   means <- colMeans(cbind(data$school_perf, data$parent_outcome, 
                           data$birth_yr,  data$mother_birthyear, 
                           data$sex, 
-                          data$mother_EduYears11_2018))  
+                          data$mother_EduYears11_2023))  
   means <- cbind(as.data.frame(means), rowname)
   
   
@@ -639,7 +636,7 @@ run_analyses_mother_EA <- function(data, school_performance, trait, onekid) {
   modpop<-lme(school_perf ~ parent_outcome + 
                 birth_yr + mother_birthyear +
                 sex +
-                mother_EduYears11_2018,
+                mother_EduYears11_2023,
               random=~1|maternal_grandparents,
               na.action=na.omit,
               data=finalsib)
@@ -649,7 +646,7 @@ run_analyses_mother_EA <- function(data, school_performance, trait, onekid) {
   modwithin<-lme(school_perf ~ within_pheno + between_pheno +
                    birth_yr +  mother_birthyear +
                    sex +
-                   mother_EduYears11_2018,
+                   mother_EduYears11_2023,
                  random=~1|maternal_grandparents,
                  na.action=na.omit,
                  data=finalsib)
@@ -860,7 +857,7 @@ run_analyses_father_EA <- function(data, school_performance, trait, onekid) {
   # Ideally I cna find all missing data in additional MOba surveys
   
   data <- data[!is.na(data$father_birthyear),]
-  data <- data[!is.na(data$father_EduYears11_2018),]
+  data <- data[!is.na(data$father_EduYears11_2023),]
   data <- data %>%
     group_by(paternal_grandparents) %>%
     filter(length(unique(father_lnr))>1)
@@ -887,7 +884,7 @@ run_analyses_father_EA <- function(data, school_performance, trait, onekid) {
   covariances <- cov(cbind(data$school_perf, data$parent_outcome, 
                            data$birth_yr,  data$father_birthyear, 
                            data$sex, 
-                           data$father_EduYears11_2018))
+                           data$father_EduYears11_2023))
   rowname <- c("school_perf", "parent_outcome", 
                "birth_yr", 
                "father_birthyear", 
@@ -897,7 +894,7 @@ run_analyses_father_EA <- function(data, school_performance, trait, onekid) {
   means <- colMeans(cbind(data$school_perf, data$parent_outcome, 
                           data$birth_yr,  data$father_birthyear, 
                           data$sex, 
-                          data$father_EduYears11_2018))  
+                          data$father_EduYears11_2023))  
   means <- cbind(as.data.frame(means), rowname)
   
   
@@ -964,7 +961,7 @@ run_analyses_father_EA <- function(data, school_performance, trait, onekid) {
   modpop<-lme(school_perf ~ parent_outcome + 
                 birth_yr + father_birthyear +
                 sex +
-                father_EduYears11_2018,
+                father_EduYears11_2023,
               random=~1|paternal_grandparents,
               na.action=na.omit,
               data=finalsib)
@@ -974,7 +971,7 @@ run_analyses_father_EA <- function(data, school_performance, trait, onekid) {
   modwithin<-lme(school_perf ~ within_pheno + between_pheno +
                    birth_yr +  father_birthyear +
                    sex +
-                   father_EduYears11_2018,
+                   father_EduYears11_2023,
                  random=~1|paternal_grandparents,
                  na.action=na.omit,
                  data=finalsib)
