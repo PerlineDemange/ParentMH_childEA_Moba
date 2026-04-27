@@ -1,0 +1,1171 @@
+# Perline Demange 
+# Run siblings analyses 
+# Start date: 03/11/2021
+# cleaned 2023-01-09
+# Updated 2025-01-03
+# Updated 2026-04-03 correction father >10yo exclusion and splice_sample 
+
+rm(list=ls())
+library(tidyverse)
+library(nlme)
+library(lme4)
+source("scripts/Functions_2026.R")
+library(psych)
+set.seed(42)
+library(grid)
+library(gridExtra)
+
+# 1. All sibships  ###################################################################### 
+## 1.1 Load data with cousins, remove cousins <10 in 2015 when father data #######
+load("data/school_moba_cousins_total_250103.rda") #29846 before was 29393
+
+school_moba_cousins_total <- extract(school_moba_cousins_total, year, 
+                                      into = c("yeartest", "monthtest"),
+                                      "(.{4})(.{2})", remove=T)
+table(school_moba_cousins_total$yeartest)
+school_moba_cousins_total$agein2015 <- 2015 - school_moba_cousins_total$birth_yr
+table(school_moba_cousins_total$agein2015)
+
+
+# father's audit and anxiety and depression SCL8 where asked in 2015, which might be after the kid 10yo 
+# so I exclude kids > 10yo in 2015 for these data when the parent of relevance if the father (not a problem for SCL8 in mothers) 
+# check sample size pre abd after too
+length(unique(school_moba_cousins_total[!is.na(school_moba_cousins_total$SCL8),]$w19_0634_lnr)) #12361
+school_moba_cousins_total$SCL8[
+  school_moba_cousins_total$sib_parent == "father" & school_moba_cousins_total$agein2015 >10 ] <- NA
+# unique 10811
+length(unique(school_moba_cousins_total[!is.na(school_moba_cousins_total$AUDIT),]$w19_0634_lnr)) #12280
+school_moba_cousins_total$AUDIT[
+  school_moba_cousins_total$sib_parent == "father" & school_moba_cousins_total$agein2015 >10 ] <- NA
+#10758
+
+school_moba_cousins_total_NPREG05 <- school_moba_cousins_total %>% 
+  drop_na(std_score_NPREG05)
+school_moba_cousins_total_NPLES05 <- school_moba_cousins_total %>% 
+  drop_na(std_score_NPLES05) 
+school_moba_cousins_total_NPENG05 <- school_moba_cousins_total %>%
+  drop_na(std_score_NPENG05) 
+
+## 1.2 Run all analyses in the subsets for each traits and school performance #########
+items_parents <- c("SCL5_Q1", "ADHD", "SCL8", "AUDIT")
+
+
+for (trait in 1:length(items_parents)){
+  assign(paste0("results_NPREG05_",items_parents[trait]),
+         run_analyses_cross(school_moba_cousins_total_NPREG05, 
+                            "std_score_NPREG05", 
+                            items_parents[trait], 
+                            T))
+  assign(paste0("results_NPLES05_",items_parents[trait]),
+         run_analyses_cross(school_moba_cousins_total_NPLES05, 
+                            "std_score_NPLES05", 
+                            items_parents[trait], 
+                            T))
+  assign(paste0("results_NPENG05_",items_parents[trait]),
+         run_analyses_cross(school_moba_cousins_total_NPENG05, 
+                            "std_score_NPENG05", 
+                            items_parents[trait], 
+                            T))
+}
+
+
+## 1.3 Get population, within and between effects for all conditions + sample sizes #############
+school_subject <- c("NPREG05", "NPLES05", "NPENG05")
+parental_trait <- items_parents
+full_results <- NULL
+for (i in 1:length(school_subject)){
+  for ( j in 1:length(parental_trait)){
+    results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
+    estimates <- c("Population", "Within_effect", "Between_effect")
+    modpop_estimates <- results[[11]][2,]
+    modwithin_within_estimates <- results[[12]][2,]
+    modwithin_between_estimates <- results[[12]][3,]
+    
+    res <- as.data.frame(rbind(modpop_estimates, 
+                               modwithin_within_estimates, 
+                               modwithin_between_estimates))
+    res <- cbind(estimates, res)
+    rownames(res)<-NULL
+    res$school_subject <- school_subject[i]
+    res$parental_trait <- parental_trait[j]
+    res$sample_size <- results[[3]]
+    res$ICC <- results[[8]] 
+    res$number_of_families <- results[[4]]
+    res$number_of_siblings <- mean(results[[5]]$Freq) # this is table
+    res$loss_duplicated <- results[[6]]  
+    full_results <- rbind(full_results, res)
+  }
+}
+head(full_results)
+full_results_siblings_total <- full_results
+#save
+#save(full_results_siblings_total, file = "output/full_results_siblings_total_260403.rda")
+#load("output/full_results_siblings_total_260403.rda")
+save(full_results_siblings_total, file = "output/full_results_siblings_total_260403.rda")
+
+
+## 1.4 Get all covariates estimates ##################################################
+full_results <- NULL
+for (i in 1:length(school_subject)){
+  for ( j in 1:length(parental_trait)){
+    results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
+    modpop_estimates <- as.data.frame(results[[11]])
+    modwithin_estimates <- as.data.frame(results[[12]])
+    modpop_estimates$model <- "population"
+    modwithin_estimates$model <- "siblings"
+    res <- rbind(modpop_estimates, modwithin_estimates)
+    res$estimates <- rownames(res)
+    rownames(res)<-NULL
+    res$school_subject <- school_subject[i]
+    res$parental_trait <- parental_trait[j]
+    res$sample_size <- results[[3]]
+    full_results <- rbind(full_results, res)
+  }
+}
+
+full_results_siblings_total_allcov <- full_results
+#save(full_results_siblings_total_allcov, file = "output/full_results_siblings_total_allcov_260403.rda")
+save(full_results_siblings_total_allcov,
+     file = "output/full_results_siblings_total_allcov_260403.rda")
+
+
+
+## 1.5 Get descriptive in table #####
+school_subject <- c("NPREG05", "NPLES05", "NPENG05")
+parental_trait <- items_parents
+
+full_results <- NULL
+for (i in 1:length(school_subject)){
+  for (j in 1:length(parental_trait)){
+    results <- get(paste0("results_", 
+                          school_subject[i],"_", 
+                          parental_trait[j]))
+    covariances <- as.data.frame(results[[9]])
+    covariances$schoolsub <- school_subject[i]
+    covariances$trait <- parental_trait[j]
+    full_results <- rbind(full_results, covariances)
+  }
+}
+covariances <- full_results
+#save(covariances, 
+#     file = "output/full_results_siblings_total_covariances_260403.rda")
+save(covariances, 
+     file = "output/full_results_siblings_total_covariances_260403.rda")
+
+
+full_results <- NULL
+for (i in 1:length(school_subject)){
+  for (j in 1:length(parental_trait)){
+    results <- get(paste0("results_", 
+                          school_subject[i],"_",
+                          parental_trait[j]))
+    means <- as.data.frame(results[[10]])
+    means$schoolsub <- school_subject[i]
+    means$trait <- parental_trait[j]
+    full_results <- rbind(full_results, means)
+  }
+}
+means <- full_results
+#save(means, file = "output/full_results_siblings_total_means_260403.rda")
+save(means, file = "output/full_results_siblings_total_means_260403.rda")
+
+
+full_results <- NULL
+for (i in 1:length(school_subject)){
+  for (j in 1:length(parental_trait)){
+    results <- get(paste0("results_",
+                          school_subject[i],"_",
+                          parental_trait[j]))
+    descriptives <- as.data.frame(results[[7]])
+    descriptives$schoolsub <- school_subject[i]
+    descriptives$trait <- parental_trait[j]
+    full_results <- rbind(full_results, descriptives)
+  }
+}
+
+descriptives <- full_results
+#save(descriptives, file = "output/full_results_siblings_total_descriptives_260403.rda")
+save(descriptives, 
+     file = "output/full_results_siblings_total_descriptives_240403.rda")
+
+
+
+## 1.6 Adjusting for  EA ####################
+
+for (trait in 1:length(items_parents)){
+  assign(paste0("results_NPREG05_",items_parents[trait]),
+         run_analyses_cross_EA(school_moba_cousins_total_NPREG05, 
+                               "std_score_NPREG05", 
+                               items_parents[trait], 
+                               T))
+  assign(paste0("results_NPLES05_",items_parents[trait]),
+         run_analyses_cross_EA(school_moba_cousins_total_NPLES05, 
+                               "std_score_NPLES05", 
+                               items_parents[trait], 
+                               T))
+  assign(paste0("results_NPENG05_",items_parents[trait]),
+         run_analyses_cross_EA(school_moba_cousins_total_NPENG05, 
+                               "std_score_NPENG05", 
+                               items_parents[trait], 
+                               T))
+}
+
+### 1.6.1 Get population, within and between effects for all conditions + sample sizes #############
+school_subject <- c("NPREG05", "NPLES05", "NPENG05")
+parental_trait <- items_parents
+full_results <- NULL
+for (i in 1:length(school_subject)){
+  for ( j in 1:length(parental_trait)){
+    results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
+    estimates <- c("Population", "Within_effect", "Between_effect")
+    modpop_estimates <- results[[11]][2,]
+    modwithin_within_estimates <- results[[12]][2,]
+    modwithin_between_estimates <- results[[12]][3,]
+    
+    res <- as.data.frame(rbind(modpop_estimates, 
+                               modwithin_within_estimates, 
+                               modwithin_between_estimates))
+    res <- cbind(estimates, res)
+    rownames(res)<-NULL
+    res$school_subject <- school_subject[i]
+    res$parental_trait <- parental_trait[j]
+    res$sample_size <- results[[3]]
+    res$ICC <- results[[8]] 
+    res$number_of_families <- results[[4]]
+    res$number_of_siblings <- mean(results[[5]]$Freq) # this is table
+    res$loss_duplicated <- results[[6]]  
+    full_results <- rbind(full_results, res)
+  }
+}
+head(full_results)
+full_results_siblings_total <- full_results
+#save
+save(full_results_siblings_total, 
+     file = "output/full_results_siblings_total_EA_260403.rda")
+
+### 1.6.2 Get all covariates estimates ##################################################
+full_results <- NULL
+for (i in 1:length(school_subject)){
+  for ( j in 1:length(parental_trait)){
+    results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
+    modpop_estimates <- as.data.frame(results[[11]])
+    modwithin_estimates <- as.data.frame(results[[12]])
+    modpop_estimates$model <- "population"
+    modwithin_estimates$model <- "siblings"
+    res <- rbind(modpop_estimates, modwithin_estimates)
+    res$estimates <- rownames(res)
+    rownames(res)<-NULL
+    res$school_subject <- school_subject[i]
+    res$parental_trait <- parental_trait[j]
+    res$sample_size <- results[[3]]
+    full_results <- rbind(full_results, res)
+  }
+}
+
+full_results_siblings_total_allcov <- full_results
+save(full_results_siblings_total_allcov, 
+     file = "output/full_results_siblings_total_allcov_EA_260403.rda")
+
+
+### 1.6.3  Get descriptive in table### 
+school_subject <- c("NPREG05", "NPLES05", "NPENG05")
+parental_trait <- items_parents
+
+full_results <- NULL
+for (i in 1:length(school_subject)){
+  for (j in 1:length(parental_trait)){
+    results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
+    covariances <- as.data.frame(results[[9]])
+    covariances$schoolsub <- school_subject[i]
+    covariances$trait <- parental_trait[j]
+    full_results <- rbind(full_results, covariances)
+  }
+}
+covariances <- full_results
+save(covariances, file = "output/full_results_siblings_total_covariances_EA_260403.rda")
+
+full_results <- NULL
+for (i in 1:length(school_subject)){
+  for (j in 1:length(parental_trait)){
+    results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
+    means <- as.data.frame(results[[10]])
+    means$schoolsub <- school_subject[i]
+    means$trait <- parental_trait[j]
+    full_results <- rbind(full_results, means)
+  }
+}
+means <- full_results
+save(means, file = "output/full_results_siblings_total_means_EA_260403.rda")
+
+
+full_results <- NULL
+for (i in 1:length(school_subject)){
+  for (j in 1:length(parental_trait)){
+    results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
+    descriptives <- as.data.frame(results[[7]])
+    descriptives$schoolsub <- school_subject[i]
+    descriptives$trait <- parental_trait[j]
+    full_results <- rbind(full_results, descriptives)
+  }
+}
+
+descriptives <- full_results
+save(descriptives, 
+     file = "output/full_results_siblings_total_descriptives_EA_260403.rda")
+
+# 2. For mothers ################################################################
+## 2.1  Load data with maternal cousins #######################
+load("data/school_mother_moba_cousins_250103.rda") #12054 before was 11447
+
+school_mother_moba_cousins_NPREG05 <- school_mother_moba_cousins %>% 
+  drop_na(std_score_NPREG05) #11 948
+school_mother_moba_cousins_NPLES05 <- school_mother_moba_cousins %>% 
+  drop_na(std_score_NPLES05) #11 791
+school_mother_moba_cousins_NPENG05 <- school_mother_moba_cousins %>%
+  drop_na(std_score_NPENG05) #11 860
+
+## 2.2 Run all analyses in the subsets for each traits and school performance #########
+items_mother <- c("scale_score_items_m_SCL_Q1_full",
+                  "scale_score_items_m_SCL_Q1_dep" ,
+                  "scale_score_items_m_SCL_Q8_full",
+                  "scale_score_items_m_SCL_Q8_SCL5",
+                  "scale_score_items_m_SCL_Q8_anx", 
+                  "scale_score_items_m_SCL_Q8_dep", 
+                  "scale_score_items_m_ADHD_Q3", 
+                  "scale_score_items_m_AUDIT_Q8", 
+                  "scale_score_items_m_ED_NRM_Q1", 
+                  "scale_score_items_m_ED_NRM_Q8")
+
+
+for (trait in 1:length(items_mother)){
+  assign(paste0("results_NPREG05_",items_mother[trait]),
+         run_analyses_mother(school_mother_moba_cousins_NPREG05, 
+                             "std_score_NPREG05", 
+                             items_mother[trait], 
+                             T))
+  assign(paste0("results_NPLES05_",items_mother[trait]),
+         run_analyses_mother(school_mother_moba_cousins_NPLES05, 
+                             "std_score_NPLES05", 
+                             items_mother[trait], 
+                             T))
+  assign(paste0("results_NPENG05_",items_mother[trait]),
+         run_analyses_mother(school_mother_moba_cousins_NPENG05, 
+                             "std_score_NPENG05", 
+                             items_mother[trait], 
+                             T))
+}
+
+
+## 2.3 Get population, within and between effects for all conditions + sample sizes #############
+school_subject <- c("NPREG05", "NPLES05", "NPENG05")
+parental_trait <- items_mother
+full_results <- NULL
+for (i in 1:length(school_subject)){
+  for ( j in 1:length(parental_trait)){
+    results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
+    estimates <- c("Population", "Within_effect", "Between_effect")
+    modpop_estimates <- results[[11]][2,]
+    modwithin_within_estimates <- results[[12]][2,]
+    modwithin_between_estimates <- results[[12]][3,]
+    
+    res <- as.data.frame(rbind(modpop_estimates, 
+                               modwithin_within_estimates, 
+                               modwithin_between_estimates))
+    res <- cbind(estimates, res)
+    rownames(res)<-NULL
+    res$school_subject <- school_subject[i]
+    res$parental_trait <- parental_trait[j]
+    res$sample_size <- results[[3]]
+    res$ICC <- results[[8]] 
+    res$number_of_families <- results[[4]]
+    res$number_of_siblings <- mean(results[[5]]$Freq) # this is table
+    res$loss_duplicated <- results[[6]]  
+    full_results <- rbind(full_results, res)
+  }
+}
+head(full_results)
+full_results_siblings_mother <- full_results
+#save
+#save(full_results_siblings_mother, file = "output/full_results_siblings_mother_260403.rda")
+save(full_results_siblings_mother, 
+     file = "output/full_results_siblings_mother_260403.rda")
+
+## 2.4 Get all covariates estimates ##################################################
+full_results <- NULL
+for (i in 1:length(school_subject)){
+  for ( j in 1:length(parental_trait)){
+    results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
+    modpop_estimates <- as.data.frame(results[[11]])
+    modwithin_estimates <- as.data.frame(results[[12]])
+    modpop_estimates$model <- "population"
+    modwithin_estimates$model <- "siblings"
+    res <- rbind(modpop_estimates, modwithin_estimates)
+    res$estimates <- rownames(res)
+    rownames(res)<-NULL
+    res$school_subject <- school_subject[i]
+    res$parental_trait <- parental_trait[j]
+    res$sample_size <- results[[3]]
+    full_results <- rbind(full_results, res)
+  }
+}
+
+full_results_siblings_mother_allcov <- full_results
+#save(full_results_siblings_mother_allcov,
+#     file = "output/full_results_siblings_mother_allcov_260403.rda")
+save(full_results_siblings_mother_allcov,
+     file = "output/full_results_siblings_mother_allcov_260403.rda")
+
+
+## 2.5 Get descriptive in table #######
+
+full_results <- NULL
+for (i in 1:length(school_subject)){
+  for (j in 1:length(parental_trait)){
+    results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
+    covariances <- as.data.frame(results[[9]])
+    covariances$schoolsub <- school_subject[i]
+    covariances$trait <- parental_trait[j]
+    full_results <- rbind(full_results, covariances)
+  }
+}
+covariances <- full_results
+#save(covariances, file = "output/full_results_siblings_mother_covariances_260403.rda")
+save(covariances, 
+     file = "output/full_results_siblings_mother_covariances_260403.rda")
+
+full_results <- NULL
+for (i in 1:length(school_subject)){
+  for (j in 1:length(parental_trait)){
+    results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
+    means <- as.data.frame(results[[10]])
+    means$schoolsub <- school_subject[i]
+    means$trait <- parental_trait[j]
+    full_results <- rbind(full_results, means)
+  }
+}
+means <- full_results
+#save(means, file = "output/full_results_siblings_mother_means_260403.rda")
+save(means,
+     file = "output/full_results_siblings_mother_means_260403.rda")
+
+
+full_results <- NULL
+for (i in 1:length(school_subject)){
+  for (j in 1:length(parental_trait)){
+    results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
+    descriptives <- as.data.frame(results[[7]])
+    descriptives$schoolsub <- school_subject[i]
+    descriptives$trait <- parental_trait[j]
+    full_results <- rbind(full_results, descriptives)
+  }
+}
+
+descriptives <- full_results
+#save(descriptives, 
+#     file = "output/full_results_siblings_mother_descriptives_260403.rda")
+save(descriptives, 
+     file = "output/full_results_siblings_mother_descriptives_260403.rda")
+
+## 2.6 Adjusting for EA #######
+
+for (trait in 1:length(items_mother)){
+  assign(paste0("results_NPREG05_",items_mother[trait]),
+         run_analyses_mother_EA(school_mother_moba_cousins_NPREG05, 
+                             "std_score_NPREG05", 
+                             items_mother[trait], 
+                             T))
+  assign(paste0("results_NPLES05_",items_mother[trait]),
+         run_analyses_mother_EA(school_mother_moba_cousins_NPLES05, 
+                             "std_score_NPLES05", 
+                             items_mother[trait], 
+                             T))
+  assign(paste0("results_NPENG05_",items_mother[trait]),
+         run_analyses_mother_EA(school_mother_moba_cousins_NPENG05, 
+                             "std_score_NPENG05", 
+                             items_mother[trait], 
+                             T))
+}
+
+# Warning message:
+#   In rq.fit.sfn(x, y, tau = tau, rhs = rhs, control = control, ...) :
+#   tiny diagonals replaced with Inf when calling blkfct
+
+### 2.6.1 Get population, within and between effects for all conditions + sample sizes #############
+school_subject <- c("NPREG05", "NPLES05", "NPENG05")
+parental_trait <- items_mother
+full_results <- NULL
+for (i in 1:length(school_subject)){
+  for ( j in 1:length(parental_trait)){
+    results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
+    estimates <- c("Population", "Within_effect", "Between_effect")
+    modpop_estimates <- results[[11]][2,]
+    modwithin_within_estimates <- results[[12]][2,]
+    modwithin_between_estimates <- results[[12]][3,]
+    
+    res <- as.data.frame(rbind(modpop_estimates, 
+                               modwithin_within_estimates, 
+                               modwithin_between_estimates))
+    res <- cbind(estimates, res)
+    rownames(res)<-NULL
+    res$school_subject <- school_subject[i]
+    res$parental_trait <- parental_trait[j]
+    res$sample_size <- results[[3]]
+    res$ICC <- results[[8]] 
+    res$number_of_families <- results[[4]]
+    res$number_of_siblings <- mean(results[[5]]$Freq) # this is table
+    res$loss_duplicated <- results[[6]]  
+    full_results <- rbind(full_results, res)
+  }
+}
+head(full_results)
+full_results_siblings_mother <- full_results
+#save
+save(full_results_siblings_mother,
+     file = "output/full_results_siblings_mother_EA_260403.rda")
+
+### 2.6.2 Get all covariates estimates ##################################################
+full_results <- NULL
+for (i in 1:length(school_subject)){
+  for ( j in 1:length(parental_trait)){
+    results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
+    modpop_estimates <- as.data.frame(results[[11]])
+    modwithin_estimates <- as.data.frame(results[[12]])
+    modpop_estimates$model <- "population"
+    modwithin_estimates$model <- "siblings"
+    res <- rbind(modpop_estimates, modwithin_estimates)
+    res$estimates <- rownames(res)
+    rownames(res)<-NULL
+    res$school_subject <- school_subject[i]
+    res$parental_trait <- parental_trait[j]
+    res$sample_size <- results[[3]]
+    full_results <- rbind(full_results, res)
+  }
+}
+
+full_results_siblings_mother_allcov <- full_results
+save(full_results_siblings_mother_allcov,
+     file = "output/full_results_siblings_mother_allcov_EA_260403.rda")
+
+
+### 2.6.3  Get descriptive in table ######
+
+full_results <- NULL
+for (i in 1:length(school_subject)){
+  for (j in 1:length(parental_trait)){
+    results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
+    covariances <- as.data.frame(results[[9]])
+    covariances$schoolsub <- school_subject[i]
+    covariances$trait <- parental_trait[j]
+    full_results <- rbind(full_results, covariances)
+  }
+}
+covariances <- full_results
+save(covariances, 
+     file = "output/full_results_siblings_mother_covariances_EA_260403.rda")
+
+full_results <- NULL
+for (i in 1:length(school_subject)){
+  for (j in 1:length(parental_trait)){
+    results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
+    means <- as.data.frame(results[[10]])
+    means$schoolsub <- school_subject[i]
+    means$trait <- parental_trait[j]
+    full_results <- rbind(full_results, means)
+  }
+}
+means <- full_results
+save(means, 
+     file = "output/full_results_siblings_mother_means_EA_260403.rda")
+
+
+full_results <- NULL
+for (i in 1:length(school_subject)){
+  for (j in 1:length(parental_trait)){
+    results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
+    descriptives <- as.data.frame(results[[7]])
+    descriptives$schoolsub <- school_subject[i]
+    descriptives$trait <- parental_trait[j]
+    full_results <- rbind(full_results, descriptives)
+  }
+}
+
+descriptives <- full_results
+save(descriptives, 
+     file = "output/full_results_siblings_mother_descriptives_EA_260403.rda")
+
+
+# 3. For fathers ################################################################
+## 3.1  Load data with paternal cousins, remove cousins <10 in 2015  #######################
+# Load data with paternal cousins 
+load("data/school_father_moba_cousins_250103.rda") #7618 before was 7333
+
+school_father_moba_cousins <- extract(school_father_moba_cousins, year, 
+                                      into = c("yeartest", "monthtest"),
+                                      "(.{4})(.{2})", remove=T)
+table(school_father_moba_cousins$yeartest)
+school_father_moba_cousins$agein2015 <- 2015 - school_father_moba_cousins$birth_yr
+table(school_father_moba_cousins$agein2015)
+
+length(unique(school_father_moba_cousins[!is.na(school_father_moba_cousins$scale_score_items_f_SCL_Q2015_full),]$w19_0634_lnr)) #3356
+school_father_moba_cousins$scale_score_items_f_SCL_Q2015_full[school_father_moba_cousins$agein2015 >10 ] <- NA
+#2253
+length(unique(school_father_moba_cousins[!is.na(school_father_moba_cousins$scale_score_items_f_SCL_Q2015_SCL5),]$w19_0634_lnr)) 
+#3355
+school_father_moba_cousins$scale_score_items_f_SCL_Q2015_SCL5[school_father_moba_cousins$agein2015 >10 ] <- NA
+#2252
+length(unique(school_father_moba_cousins[!is.na(school_father_moba_cousins$scale_score_items_f_SCL_Q2015_anx),]$w19_0634_lnr)) 
+#3353
+school_father_moba_cousins$scale_score_items_f_SCL_Q2015_anx[school_father_moba_cousins$agein2015 >10 ] <- NA
+#2250
+length(unique(school_father_moba_cousins[!is.na(school_father_moba_cousins$scale_score_items_f_SCL_Q2015_dep),]$w19_0634_lnr)) 
+#3356
+school_father_moba_cousins$scale_score_items_f_SCL_Q2015_dep[school_father_moba_cousins$agein2015 >10 ] <- NA
+#2253
+length(unique(school_father_moba_cousins[!is.na(school_father_moba_cousins$scale_score_items_f_AUDIT_Q2015),]$w19_0634_lnr)) 
+#3294
+school_father_moba_cousins$scale_score_items_f_AUDIT_Q2015[school_father_moba_cousins$agein2015 >10 ] <- NA
+#2214
+
+#Data with outcomes
+school_father_moba_cousins_NPREG05 <-school_father_moba_cousins %>% 
+  drop_na(std_score_NPREG05) #7564
+school_father_moba_cousins_NPLES05 <-school_father_moba_cousins %>% 
+  drop_na(std_score_NPLES05) #7485
+school_father_moba_cousins_NPENG05 <-school_father_moba_cousins %>%
+  drop_na(std_score_NPENG05) #7507
+
+## 3.2 Run all analyses in the subsets for each traits and school performance #########
+items_father <- c("scale_score_items_f_SCL_Q1_full", 
+                  "scale_score_items_f_SCL_Q1_dep",
+                  "scale_score_items_f_SCL_Q1_anx", 
+                  "scale_score_items_f_SCL_Q1_SCL5", 
+                  "scale_score_items_f_SCL_Q2015_full", 
+                  "scale_score_items_f_SCL_Q2015_SCL5",
+                  "scale_score_items_f_SCL_Q2015_anx", 
+                  "scale_score_items_f_SCL_Q2015_dep", 
+                  "scale_score_items_f_ADHD_Q1",
+                  "scale_score_items_f_AUDIT_Q2015")
+
+
+for (trait in 1:length(items_father)){
+  assign(paste0("results_NPREG05_",items_father[trait]),
+         run_analyses_father(school_father_moba_cousins_NPREG05, 
+                             "std_score_NPREG05", 
+                             items_father[trait], 
+                             T))
+  assign(paste0("results_NPLES05_",items_father[trait]),
+         run_analyses_father(school_father_moba_cousins_NPLES05, 
+                             "std_score_NPLES05", 
+                             items_father[trait], 
+                             T))
+  assign(paste0("results_NPENG05_",items_father[trait]),
+         run_analyses_father(school_father_moba_cousins_NPENG05, 
+                             "std_score_NPENG05", 
+                             items_father[trait], 
+                             T))
+}
+
+
+## 3.3 Get population, within and between effects for all conditions + sample sizes #############
+school_subject <- c("NPREG05", "NPLES05", "NPENG05")
+parental_trait <- items_father
+full_results <- NULL
+for (i in 1:length(school_subject)){
+  for ( j in 1:length(parental_trait)){
+    results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
+    estimates <- c("Population", "Within_effect", "Between_effect")
+    modpop_estimates <- results[[11]][2,]
+    modwithin_within_estimates <- results[[12]][2,]
+    modwithin_between_estimates <- results[[12]][3,]
+    
+    res <- as.data.frame(rbind(modpop_estimates, 
+                               modwithin_within_estimates, 
+                               modwithin_between_estimates))
+    res <- cbind(estimates, res)
+    rownames(res)<-NULL
+    res$school_subject <- school_subject[i]
+    res$parental_trait <- parental_trait[j]
+    res$sample_size <- results[[3]]
+    res$ICC <- results[[8]] 
+    res$number_of_families <- results[[4]]
+    res$number_of_siblings <- mean(results[[5]]$Freq) # this is table
+    res$loss_duplicated <- results[[6]]  
+    full_results <- rbind(full_results, res)
+  }
+}
+head(full_results)
+full_results_siblings_father <- full_results
+#save
+save(full_results_siblings_father, 
+     file = "output/full_results_siblings_father_260403.rda")
+
+## 3.4 Get all covariates estimates ##################################################
+full_results <- NULL
+for (i in 1:length(school_subject)){
+  for ( j in 1:length(parental_trait)){
+    results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
+    modpop_estimates <- as.data.frame(results[[11]])
+    modwithin_estimates <- as.data.frame(results[[12]])
+    modpop_estimates$model <- "population"
+    modwithin_estimates$model <- "siblings"
+    res <- rbind(modpop_estimates, modwithin_estimates)
+    res$estimates <- rownames(res)
+    rownames(res)<-NULL
+    res$school_subject <- school_subject[i]
+    res$parental_trait <- parental_trait[j]
+    res$sample_size <- results[[3]]
+    full_results <- rbind(full_results, res)
+  }
+}
+
+full_results_siblings_father_allcov <- full_results
+save(full_results_siblings_father_allcov, 
+     file = "output/full_results_siblings_father_allcov_260403.rda")
+
+
+## 3.5 Get descriptive in table #######
+
+full_results <- NULL
+for (i in 1:length(school_subject)){
+  for (j in 1:length(parental_trait)){
+    results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
+    covariances <- as.data.frame(results[[9]])
+    covariances$schoolsub <- school_subject[i]
+    covariances$trait <- parental_trait[j]
+    full_results <- rbind(full_results, covariances)
+  }
+}
+covariances <- full_results
+save(covariances, file = "output/full_results_siblings_father_covariances_260403.rda")
+
+full_results <- NULL
+for (i in 1:length(school_subject)){
+  for (j in 1:length(parental_trait)){
+    results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
+    means <- as.data.frame(results[[10]])
+    means$schoolsub <- school_subject[i]
+    means$trait <- parental_trait[j]
+    full_results <- rbind(full_results, means)
+  }
+}
+means <- full_results
+save(means, file = "output/full_results_siblings_father_means_260403.rda")
+
+
+full_results <- NULL
+for (i in 1:length(school_subject)){
+  for (j in 1:length(parental_trait)){
+    results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
+    descriptives <- as.data.frame(results[[7]])
+    descriptives$schoolsub <- school_subject[i]
+    descriptives$trait <- parental_trait[j]
+    full_results <- rbind(full_results, descriptives)
+  }
+}
+
+descriptives <- full_results
+save(descriptives, file = "output/full_results_siblings_father_descriptives_260403.rda")
+
+## 3.6 Adjusting for EA #######
+
+for (trait in 1:length(items_father)){
+  assign(paste0("results_NPREG05_",items_father[trait]),
+         run_analyses_father_EA(school_father_moba_cousins_NPREG05, 
+                                "std_score_NPREG05", 
+                                items_father[trait], 
+                                T))
+  assign(paste0("results_NPLES05_",items_father[trait]),
+         run_analyses_father_EA(school_father_moba_cousins_NPLES05, 
+                                "std_score_NPLES05", 
+                                items_father[trait], 
+                                T))
+  assign(paste0("results_NPENG05_",items_father[trait]),
+         run_analyses_father_EA(school_father_moba_cousins_NPENG05, 
+                                "std_score_NPENG05", 
+                                items_father[trait], 
+                                T))
+}
+
+
+### 3.6.1 Get population, within and between effects for all conditions + sample sizes #############
+school_subject <- c("NPREG05", "NPLES05", "NPENG05")
+parental_trait <- items_father
+full_results <- NULL
+for (i in 1:length(school_subject)){
+  for ( j in 1:length(parental_trait)){
+    results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
+    estimates <- c("Population", "Within_effect", "Between_effect")
+    modpop_estimates <- results[[11]][2,]
+    modwithin_within_estimates <- results[[12]][2,]
+    modwithin_between_estimates <- results[[12]][3,]
+    
+    res <- as.data.frame(rbind(modpop_estimates, 
+                               modwithin_within_estimates, 
+                               modwithin_between_estimates))
+    res <- cbind(estimates, res)
+    rownames(res)<-NULL
+    res$school_subject <- school_subject[i]
+    res$parental_trait <- parental_trait[j]
+    res$sample_size <- results[[3]]
+    res$ICC <- results[[8]] 
+    res$number_of_families <- results[[4]]
+    res$number_of_siblings <- mean(results[[5]]$Freq) # this is table
+    res$loss_duplicated <- results[[6]]  
+    full_results <- rbind(full_results, res)
+  }
+}
+head(full_results)
+full_results_siblings_father <- full_results
+#save
+save(full_results_siblings_father,
+     file = "output/full_results_siblings_father_EA_260403.rda")
+
+### 3.6.2 Get all covariates estimates ##################################################
+full_results <- NULL
+for (i in 1:length(school_subject)){
+  for ( j in 1:length(parental_trait)){
+    results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
+    modpop_estimates <- as.data.frame(results[[11]])
+    modwithin_estimates <- as.data.frame(results[[12]])
+    modpop_estimates$model <- "population"
+    modwithin_estimates$model <- "siblings"
+    res <- rbind(modpop_estimates, modwithin_estimates)
+    res$estimates <- rownames(res)
+    rownames(res)<-NULL
+    res$school_subject <- school_subject[i]
+    res$parental_trait <- parental_trait[j]
+    res$sample_size <- results[[3]]
+    full_results <- rbind(full_results, res)
+  }
+}
+
+full_results_siblings_father_allcov <- full_results
+save(full_results_siblings_father_allcov,
+     file = "output/full_results_siblings_father_allcov_EA_260403.rda")
+
+
+### 3.6.3  Get descriptive in table ######
+
+full_results <- NULL
+for (i in 1:length(school_subject)){
+  for (j in 1:length(parental_trait)){
+    results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
+    covariances <- as.data.frame(results[[9]])
+    covariances$schoolsub <- school_subject[i]
+    covariances$trait <- parental_trait[j]
+    full_results <- rbind(full_results, covariances)
+  }
+}
+covariances <- full_results
+save(covariances, 
+     file = "output/full_results_siblings_father_covariances_EA_260403.rda")
+
+full_results <- NULL
+for (i in 1:length(school_subject)){
+  for (j in 1:length(parental_trait)){
+    results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
+    means <- as.data.frame(results[[10]])
+    means$schoolsub <- school_subject[i]
+    means$trait <- parental_trait[j]
+    full_results <- rbind(full_results, means)
+  }
+}
+means <- full_results
+save(means, file = "output/full_results_siblings_father_means_EA_260403.rda")
+
+
+full_results <- NULL
+for (i in 1:length(school_subject)){
+  for (j in 1:length(parental_trait)){
+    results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
+    descriptives <- as.data.frame(results[[7]])
+    descriptives$schoolsub <- school_subject[i]
+    descriptives$trait <- parental_trait[j]
+    full_results <- rbind(full_results, descriptives)
+  }
+}
+
+descriptives <- full_results
+save(descriptives, 
+     file = "output/full_results_siblings_father_descriptives_EA_260403.rda")
+
+
+
+
+# 4. Simple regression in the bigger Moba sample (not only cousins) ######
+## 4.1  All gender #####
+load("data/school_moba_kidpreg_total_250103.rda")
+#pregnancy relevant child, all possible
+
+school_moba_kidpreg_total$agein2015 <- 2015 - school_moba_kidpreg_total$birth_yr
+table(school_moba_kidpreg_total$agein2015, useNA = "ifany")
+
+# father's audit and anxiety and depression SCL8 where asked in 2015, which might be after the kid 10yo 
+# so I exclude kids > 10yo in 2015 for these data when the parent of relevance if the father (not a problem for SCL8 in mothers) 
+# check sample size pre abd after too
+length(unique(school_moba_kidpreg_total[school_moba_kidpreg_total$sib_parent == "father" & !is.na(school_moba_kidpreg_total$SCL8),]$w19_0634_lnr)) #33512
+length(unique(school_moba_kidpreg_total[!is.na(school_moba_kidpreg_total$SCL8),]$w19_0634_lnr)) #53688
+school_moba_kidpreg_total$SCL8[
+  school_moba_kidpreg_total$sib_parent == "father" & school_moba_kidpreg_total$agein2015 >10 ] <- NA
+# unique only father 23228, all 49389
+length(unique(school_moba_kidpreg_total[school_moba_kidpreg_total$sib_parent == "father" &!is.na(school_moba_kidpreg_total$AUDIT),]$w19_0634_lnr)) #33019
+length(unique(school_moba_kidpreg_total[!is.na(school_moba_kidpreg_total$AUDIT),]$w19_0634_lnr)) #53516
+school_moba_kidpreg_total$AUDIT[
+  school_moba_kidpreg_total$sib_parent == "father" & school_moba_kidpreg_total$agein2015 >10 ] <- NA
+#unique only father 22907, all 49266
+
+items_parents <- c("SCL5_Q1", "ADHD", "SCL8", "AUDIT")
+school_total_moba_kidpreg_NPREG05 <-school_moba_kidpreg_total %>% 
+  drop_na(std_score_NPREG05) #182356
+school_total_moba_kidpreg_NPLES05 <-school_moba_kidpreg_total %>% 
+  drop_na(std_score_NPLES05) #180237
+school_total_moba_kidpreg_NPENG05 <-school_moba_kidpreg_total %>%
+  drop_na(std_score_NPENG05) #180879
+
+for (trait in 1:length(items_parents)){
+  assign(paste0("results_fullMoba_NPREG05_",items_parents[trait]),
+         run_analyses_fullMoba(school_total_moba_kidpreg_NPREG05, 
+                                     "std_score_NPREG05", 
+                                     items_parents[trait], 
+                                     onekid = T))
+  assign(paste0("results_fullMoba_NPLES05_",items_parents[trait]),
+         run_analyses_fullMoba(school_total_moba_kidpreg_NPLES05, 
+                                     "std_score_NPLES05", 
+                                     items_parents[trait], 
+                                     onekid = T))
+  assign(paste0("results_fullMoba_NPENG05_",items_parents[trait]),
+         run_analyses_fullMoba(school_total_moba_kidpreg_NPENG05, 
+                                     "std_score_NPENG05", 
+                                     items_parents[trait], 
+                                     onekid=T))
+}
+
+school_subject <- c("NPREG05", "NPLES05", "NPENG05")
+parental_trait <- items_parents
+full_results <- NULL
+for (i in 1:length(school_subject)){
+  for ( j in 1:length(parental_trait)){
+    results <- get(paste0("results_fullMoba_", school_subject[i],"_", parental_trait[j]))
+    res.colnames <- c()
+    res <- data.frame(as.list(results[[7]][2,]))
+    res$estimates <- "Population_fullMoba"
+    res$school_subject <- school_subject[i]
+    res$parental_trait <- parental_trait[j]
+    res$sample_size <- results[[3]]
+    full_results <- rbind(full_results, res)
+  }
+}
+
+summary(full_results)
+head(full_results)
+
+full_results_fullMoba_total <- full_results
+
+# save(full_results_fullMoba_total,
+#      file = "output/full_results_fullMoba_total_260403.rda")
+save(full_results_fullMoba_total,
+     file = "output/full_results_fullMoba_total_260403.rda")
+
+full_results <- NULL
+for (i in 1:length(school_subject)){
+  for ( j in 1:length(parental_trait)){
+    results <- get(paste0("results_fullMoba_", school_subject[i],"_", parental_trait[j]))
+    res <- as.data.frame(results[[7]])
+    res$estimates <- rownames(res)
+    rownames(res)<-NULL
+    res$school_subject <- school_subject[i]
+    res$parental_trait <- parental_trait[j]
+    res$sample_size <- results[[3]]
+    full_results <- rbind(full_results, res)
+  }
+}
+
+full_results_siblings_fullMoba_allcov <- full_results
+# save(full_results_siblings_fullMoba_allcov,
+#      file = "output/full_results_siblings_fullMoba_allcov_260403.rda")
+save(full_results_siblings_fullMoba_allcov,
+     file = "output/full_results_siblings_fullMoba_allcov_260403.rda")
+
+
+full_results <- NULL
+for (i in 1:length(school_subject)){
+  for (j in 1:length(parental_trait)){
+    results <- get(paste0("results_fullMoba_", school_subject[i],"_", parental_trait[j]))
+    covariances <- as.data.frame(results[[5]])
+    covariances$schoolsub <- school_subject[i]
+    covariances$trait <- parental_trait[j]
+    full_results <- rbind(full_results, covariances)
+  }
+}
+covariances <- full_results
+# save(covariances,
+#      file = "output/full_results_siblings_FullMoba__covariances_260403.rda")
+save(covariances,
+     file = "output/full_results_siblings_FullMoba__covariances_260403.rda")
+
+
+full_results <- NULL
+for (i in 1:length(school_subject)){
+  for (j in 1:length(parental_trait)){
+    results <- get(paste0("results_fullMoba_", school_subject[i],"_", parental_trait[j]))
+    means <- as.data.frame(results[[6]])
+    means$schoolsub <- school_subject[i]
+    means$trait <- parental_trait[j]
+    full_results <- rbind(full_results, means)
+  }
+}
+means <- full_results
+# save(means, 
+#      file = "output/full_results_siblings_fullMoba_means_EA_260403.rda")
+save(means, 
+     file = "output/full_results_siblings_fullMoba_means_EA_260403.rda")
+
+
+full_results <- NULL
+for (i in 1:length(school_subject)){
+  for (j in 1:length(parental_trait)){
+    results <- get(paste0("results_fullMoba_", school_subject[i],"_", parental_trait[j]))
+    descriptives <- as.data.frame(results[[4]])
+    descriptives$schoolsub <- school_subject[i]
+    descriptives$trait <- parental_trait[j]
+    full_results <- rbind(full_results, descriptives)
+  }
+}
+
+descriptives <- full_results
+# save(descriptives, 
+#      file = "output/full_results_siblings_fullMoba_descriptives_260403.rda")
+save(descriptives, 
+     file = "output/full_results_siblings_fullMoba_descriptives_260403.rda")
+
+
+
+# 
+## 4.2 In mothers - Eating disorders ######
+load("data/school_mother_moba_kidpreg_250103.rda")#pregnancy relevant child
+
+items_parents <- c("scale_score_items_m_ED_NRM_Q1", 
+                   "scale_score_items_m_ED_NRM_Q8")
+school_mother_moba_kidpreg_NPREG05 <-school_mother_moba_kidpreg %>% 
+  drop_na(std_score_NPREG05) 
+school_mother_moba_kidpreg_NPLES05 <-school_mother_moba_kidpreg %>% 
+  drop_na(std_score_NPLES05) 
+school_mother_moba_kidpreg_NPENG05 <-school_mother_moba_kidpreg %>%
+  drop_na(std_score_NPENG05) 
+
+for (trait in 1:length(items_parents)){
+  assign(paste0("results_fullMoba_mother_NPREG05_",items_parents[trait]),
+         run_analyses_fullMoba_mother(school_mother_moba_kidpreg_NPREG05, 
+                               "std_score_NPREG05", 
+                               items_parents[trait], 
+                               onekid = T))
+  assign(paste0("results_fullMoba_mother_NPLES05_",items_parents[trait]),
+         run_analyses_fullMoba_mother(school_mother_moba_kidpreg_NPLES05, 
+                               "std_score_NPLES05", 
+                               items_parents[trait], 
+                               onekid = T))
+  assign(paste0("results_fullMoba_mother_NPENG05_",items_parents[trait]),
+         run_analyses_fullMoba_mother(school_mother_moba_kidpreg_NPENG05, 
+                               "std_score_NPENG05", 
+                               items_parents[trait], 
+                               onekid=T))
+}
+
+school_subject <- c("NPREG05", "NPLES05", "NPENG05")
+parental_trait <- items_parents
+full_results <- NULL
+for (i in 1:length(school_subject)){
+  for ( j in 1:length(parental_trait)){
+    results <- get(paste0("results_fullMoba_mother_", school_subject[i],"_", parental_trait[j]))
+    res.colnames <- c()
+    res <- data.frame(as.list(results[[7]][2,]))
+    res$estimates <- "Population_fullMoba"
+    res$school_subject <- school_subject[i]
+    res$parental_trait <- parental_trait[j]
+    res$sample_size <- results[[3]]
+    full_results <- rbind(full_results, res)
+  }
+}
+
+summary(full_results)
+head(full_results)
+
+full_results_fullMoba_total <- full_results
+
+# save(full_results_fullMoba_total,
+#      file = "output/full_results_fullMoba_mother_260403.rda")
+save(full_results_fullMoba_total,
+     file = "output/full_results_fullMoba_mother_260403.rda")
+
+full_results <- NULL
+for (i in 1:length(school_subject)){
+  for ( j in 1:length(parental_trait)){
+    results <- get(paste0("results_fullMoba_mother_", school_subject[i],"_", parental_trait[j]))
+    res <- as.data.frame(results[[7]])
+    res$estimates <- rownames(res)
+    rownames(res)<-NULL
+    res$school_subject <- school_subject[i]
+    res$parental_trait <- parental_trait[j]
+    res$sample_size <- results[[3]]
+    full_results <- rbind(full_results, res)
+  }
+}
+
+full_results_siblings_fullMoba_allcov <- full_results
+# save(full_results_siblings_fullMoba_allcov,
+#      file = "output/full_results_siblings_fullMoba_mother_allcov_260403.rda")
+save(full_results_siblings_fullMoba_allcov,
+     file = "output/full_results_siblings_fullMoba_mother_allcov_260403.rda")
+
+
+full_results <- NULL
+for (i in 1:length(school_subject)){
+  for (j in 1:length(parental_trait)){
+    results <- get(paste0("results_fullMoba_mother_", school_subject[i],"_", parental_trait[j]))
+    covariances <- as.data.frame(results[[5]])
+    covariances$schoolsub <- school_subject[i]
+    covariances$trait <- parental_trait[j]
+    full_results <- rbind(full_results, covariances)
+  }
+}
+covariances <- full_results
+# save(covariances, 
+#      file = "output/full_results_siblings_fullMoba_mother_covariances_260403.rda")
+save(covariances, 
+     file = "output/full_results_siblings_fullMoba_mother_covariances_260403.rda")
+
+full_results <- NULL
+for (i in 1:length(school_subject)){
+  for (j in 1:length(parental_trait)){
+    results <- get(paste0("results_fullMoba_mother_", school_subject[i],"_", parental_trait[j]))
+    means <- as.data.frame(results[[6]])
+    means$schoolsub <- school_subject[i]
+    means$trait <- parental_trait[j]
+    full_results <- rbind(full_results, means)
+  }
+}
+means <- full_results
+# save(means, 
+#      file = "output/full_results_siblings_fullMoba_mother_means_260403.rda")
+save(means, 
+     file = "output/full_results_siblings_fullMoba_mother_means_260403.rda")
+
+
+full_results <- NULL
+for (i in 1:length(school_subject)){
+  for (j in 1:length(parental_trait)){
+    results <- get(paste0("results_fullMoba_mother_", school_subject[i],"_", parental_trait[j]))
+    descriptives <- as.data.frame(results[[4]])
+    descriptives$schoolsub <- school_subject[i]
+    descriptives$trait <- parental_trait[j]
+    full_results <- rbind(full_results, descriptives)
+  }
+}
+
+descriptives <- full_results
+# save(descriptives, 
+#      file = "output/full_results_siblings_fullMoba_mother_descriptives_260403.rda")
+save(descriptives, 
+     file = "output/full_results_siblings_fullMoba_mother_descriptives_260403.rda")
+
+
