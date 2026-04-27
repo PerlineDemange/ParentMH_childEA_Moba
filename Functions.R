@@ -10,9 +10,9 @@ ICCest <- function(model) {
 
 #
 
-# data <- school_moba_cousins_total_NPENG05
+# data <- school_moba_cousins_total_NPREG05
 # data$parent_outcome <- data$SCL8
-# data$school_perf <- data$std_score_NPENG05
+# data$school_perf <- data$std_score_NPREG05
 # 
 # onekid <- T
 
@@ -23,38 +23,34 @@ run_analyses_cross <- function(data, school_performance, trait, onekid) {
   
   # Remove missing data 
   data <- data %>% drop_na(parent_outcome) 
+  data <- data[!is.na(data$father_birthyear),]
+  data <- data[!is.na(data$mother_birthyear),]
   
   # Remove families without 2 sisters 
   data <- data %>%
     group_by(shared_grandparents_id) %>%
     filter(length(unique(sib_parent_id))>1)
   
-  # If more than one kid per mother, randomly remove one 
+  # If more than one kid per focal parent, randomly remove one 
   if (onekid == T){
     data <- data %>%
       group_by(sib_parent_id) %>%
-      slice_head(n = 1) %>%
+      slice_sample(n = 1) %>%
       ungroup() 
   }
   
   # Remove duplicated children, part of two families
+  #this also removes if same child has both father and both mother in data 
   sample_size_beforedup <- nrow(data)
   duplicates <- sum(duplicated(data$w19_0634_lnr)) 
   data <- data[!duplicated(data$w19_0634_lnr),]
   data <- data %>%
     group_by(shared_grandparents_id) %>%
     filter(length(unique(sib_parent_id))>1)
+
   
   sample_size_afterdup <- nrow(data)
   
-  # Remove individual with missing birthyear for father or mother and get estimate of how much that is 
-  # Ideally I can find all missing data in additional Moba surveys
-  
-  data <- data[!is.na(data$father_birthyear),]
-  data <- data[!is.na(data$mother_birthyear),]
-  data <- data %>%
-    group_by(shared_grandparents_id) %>%
-    filter(length(unique(sib_parent_id))>1)
   
   # Get sample sizes 
   sample_size <- nrow(data)
@@ -64,8 +60,7 @@ run_analyses_cross <- function(data, school_performance, trait, onekid) {
   number_of_families <- as.data.frame(table(number_of_siblings$Freq))
   number_of_families <- sum(number_of_families$Freq)
   loss_duplicated <- sample_size_beforedup - sample_size_afterdup
-  loss_missingbirthyear <- sample_size_afterdup - sample_size
-  
+
   # Data transformation
   data$sex <- as.numeric(data$sex)
   data <- data %>% mutate(sib_parent = recode(sib_parent,
@@ -168,7 +163,7 @@ run_analyses_cross <- function(data, school_performance, trait, onekid) {
   
   # Save all results 
   results <- list(trait, school_performance, # variables
-                  sample_size, number_of_families, number_of_siblings, loss_duplicated, loss_missingbirthyear,  # sample sizes 
+                  sample_size, number_of_families, number_of_siblings, loss_duplicated,  # sample sizes 
                   descriptives, ICC, covariances, means, #descriptives
                   modpop_coef, modwithin_coef) # regressions results 
   results
@@ -181,6 +176,10 @@ run_analyses_cross_EA <- function(data, school_performance, trait, onekid) {
   
   # Remove missing data 
   data <- data %>% drop_na(parent_outcome) 
+  data <- data[!is.na(data$father_birthyear),]
+  data <- data[!is.na(data$mother_birthyear),]
+  data <- data[!is.na(data$mother_EduYears11_2023),]
+  data <- data[!is.na(data$father_EduYears11_2023),]
   
   # Remove families without 2 sisters 
   data <- data %>%
@@ -191,7 +190,7 @@ run_analyses_cross_EA <- function(data, school_performance, trait, onekid) {
   if (onekid == T){
     data <- data %>%
       group_by(sib_parent_id) %>%
-      slice_head(n = 1) %>%
+      slice_sample(n = 1) %>%
       ungroup() 
   }
   
@@ -204,18 +203,7 @@ run_analyses_cross_EA <- function(data, school_performance, trait, onekid) {
     filter(length(unique(sib_parent_id))>1)
   
   sample_size_afterdup <- nrow(data)
-  
-  # Remove individual with missing birthyear for father or mother and get estimate of how much that is 
-  # Ideally I cna find all missing data in additional MOba surveys
-  #Here I also check the missing of the education # it shoudl not be missing 
-  
-  data <- data[!is.na(data$father_birthyear),]
-  data <- data[!is.na(data$mother_birthyear),]
-  data <- data[!is.na(data$mother_EduYears11_2023),]
-  data <- data[!is.na(data$father_EduYears11_2023),]
-  data <- data %>%
-    group_by(shared_grandparents_id) %>%
-    filter(length(unique(sib_parent_id))>1)
+
   
   # Get sample sizes 
   sample_size <- nrow(data)
@@ -225,8 +213,7 @@ run_analyses_cross_EA <- function(data, school_performance, trait, onekid) {
   number_of_families <- as.data.frame(table(number_of_siblings$Freq))
   number_of_families <- sum(number_of_families$Freq)
   loss_duplicated <- sample_size_beforedup - sample_size_afterdup
-  loss_missingbirthyear <- sample_size_afterdup - sample_size
-  
+
   # Data transformation
   data$sex <- as.numeric(data$sex)
   data <- data %>% mutate(sib_parent = recode(sib_parent,
@@ -337,7 +324,7 @@ run_analyses_cross_EA <- function(data, school_performance, trait, onekid) {
   
   # Save all results 
   results <- list(trait, school_performance, # variables
-                  sample_size, number_of_families, number_of_siblings, loss_duplicated, loss_missingbirthyear,  # sample sizes 
+                  sample_size, number_of_families, number_of_siblings, loss_duplicated,   # sample sizes 
                   descriptives, ICC, covariances, means, #descriptives
                   modpop_coef, modwithin_coef) # regressions results 
   results
@@ -351,6 +338,7 @@ run_analyses_mother <- function(data, school_performance, trait, onekid) {
   
   # Remove missing data 
   data <- data %>% drop_na(parent_outcome) 
+  data <- data[!is.na(data$mother_birthyear),]
   
   # Remove families without 2 sisters 
   data <- data %>%
@@ -361,7 +349,7 @@ run_analyses_mother <- function(data, school_performance, trait, onekid) {
   if (onekid == T){
     data <- data %>%
       group_by(mother_lnr) %>%
-      slice_head(n = 1) %>%
+      slice_sample(n = 1) %>%
       ungroup() 
   }
   
@@ -374,15 +362,7 @@ run_analyses_mother <- function(data, school_performance, trait, onekid) {
     filter(length(unique(mother_lnr))>1)
   
   sample_size_afterdup <- nrow(data)
-  
-  # Remove individual with missing birthyear for father or mother and get estimate of how much that is 
-  # Ideally I cna find all missing data in additional MOba surveys
-  
-  data <- data[!is.na(data$mother_birthyear),]
-  data <- data %>%
-    group_by(maternal_grandparents) %>%
-    filter(length(unique(mother_lnr))>1)
-  
+
   # Get sample sizes 
   sample_size <- nrow(data)
   
@@ -391,7 +371,6 @@ run_analyses_mother <- function(data, school_performance, trait, onekid) {
   number_of_families <- as.data.frame(table(number_of_siblings$Freq))
   number_of_families <- sum(number_of_families$Freq)
   loss_duplicated <- sample_size_beforedup - sample_size_afterdup
-  loss_missingbirthyear <- sample_size_afterdup - sample_size
   
   # Data transformation
   data$sex <- as.numeric(data$sex)
@@ -492,7 +471,7 @@ run_analyses_mother <- function(data, school_performance, trait, onekid) {
   
   # Save all results 
   results <- list(trait, school_performance, # variables
-                  sample_size, number_of_families, number_of_siblings, loss_duplicated, loss_missingbirthyear,  # sample sizes 
+                  sample_size, number_of_families, number_of_siblings, loss_duplicated,  # sample sizes 
                   descriptives, ICC, covariances, means, #descriptives
                   modpop_coef, modwithin_coef) # regressions results 
   results
@@ -504,7 +483,9 @@ run_analyses_mother_EA <- function(data, school_performance, trait, onekid) {
   data$school_perf <- data[[school_performance]]
   
   # Remove missing data 
-  data <- data %>% drop_na(parent_outcome) 
+  data <- data %>% drop_na(parent_outcome)
+  data <- data[!is.na(data$mother_birthyear),]
+  data <- data[!is.na(data$mother_EduYears11_2023),]
   
   # Remove families without 2 sisters 
   data <- data %>%
@@ -515,7 +496,7 @@ run_analyses_mother_EA <- function(data, school_performance, trait, onekid) {
   if (onekid == T){
     data <- data %>%
       group_by(mother_lnr) %>%
-      slice_head(n = 1) %>%
+      slice_sample(n = 1) %>%
       ungroup() 
   }
   
@@ -529,15 +510,6 @@ run_analyses_mother_EA <- function(data, school_performance, trait, onekid) {
   
   sample_size_afterdup <- nrow(data)
   
-  # Remove individual with missing birthyear for father or mother and get estimate of how much that is 
-  # Ideally I cna find all missing data in additional MOba surveys
-  
-  data <- data[!is.na(data$mother_birthyear),]
-  data <- data[!is.na(data$mother_EduYears11_2023),]
-  data <- data %>%
-    group_by(maternal_grandparents) %>%
-    filter(length(unique(mother_lnr))>1)
-  
   # Get sample sizes 
   sample_size <- nrow(data)
   
@@ -546,8 +518,7 @@ run_analyses_mother_EA <- function(data, school_performance, trait, onekid) {
   number_of_families <- as.data.frame(table(number_of_siblings$Freq))
   number_of_families <- sum(number_of_families$Freq)
   loss_duplicated <- sample_size_beforedup - sample_size_afterdup
-  loss_missingbirthyear <- sample_size_afterdup - sample_size
-  
+
   # Data transformation
   data$sex <- as.numeric(data$sex)
   
@@ -654,7 +625,7 @@ run_analyses_mother_EA <- function(data, school_performance, trait, onekid) {
   
   # Save all results 
   results <- list(trait, school_performance, # variables
-                  sample_size, number_of_families, number_of_siblings, loss_duplicated, loss_missingbirthyear,  # sample sizes 
+                  sample_size, number_of_families, number_of_siblings, loss_duplicated,  # sample sizes 
                   descriptives, ICC, covariances, means, #descriptives
                   modpop_coef, modwithin_coef) # regressions results 
   results
@@ -674,6 +645,7 @@ run_analyses_father <- function(data, school_performance, trait, onekid) {
   
   # Remove missing data 
   data <- data %>% drop_na(parent_outcome) 
+  data <- data[!is.na(data$father_birthyear),]
   
   # Remove families without 2 sisters 
   data <- data %>%
@@ -684,7 +656,7 @@ run_analyses_father <- function(data, school_performance, trait, onekid) {
   if (onekid == T){
     data <- data %>%
       group_by(father_lnr) %>%
-      slice_head(n = 1) %>%
+      slice_sample(n = 1) %>%
       ungroup() 
   }
   
@@ -698,14 +670,6 @@ run_analyses_father <- function(data, school_performance, trait, onekid) {
   
   sample_size_afterdup <- nrow(data)
   
-  # Remove individual with missing birthyear for father or mother and get estimate of how much that is 
-  # Ideally I cna find all missing data in additional MOba surveys
-  
-  data <- data[!is.na(data$father_birthyear),]
-  data <- data %>%
-    group_by(paternal_grandparents) %>%
-    filter(length(unique(father_lnr))>1)
-  
   # Get sample sizes 
   sample_size <- nrow(data)
   
@@ -714,8 +678,7 @@ run_analyses_father <- function(data, school_performance, trait, onekid) {
   number_of_families <- as.data.frame(table(number_of_siblings$Freq))
   number_of_families <- sum(number_of_families$Freq)
   loss_duplicated <- sample_size_beforedup - sample_size_afterdup
-  loss_missingbirthyear <- sample_size_afterdup - sample_size
-  
+
   # Data transformation
   data$sex <- as.numeric(data$sex)
   
@@ -816,7 +779,7 @@ run_analyses_father <- function(data, school_performance, trait, onekid) {
   
   # Save all results 
   results <- list(trait, school_performance, # variables
-                  sample_size, number_of_families, number_of_siblings, loss_duplicated, loss_missingbirthyear,  # sample sizes 
+                  sample_size, number_of_families, number_of_siblings, loss_duplicated,  # sample sizes 
                   descriptives, ICC, covariances, means, #descriptives
                   modpop_coef, modwithin_coef) # regressions results 
   results
@@ -829,6 +792,8 @@ run_analyses_father_EA <- function(data, school_performance, trait, onekid) {
   
   # Remove missing data 
   data <- data %>% drop_na(parent_outcome) 
+  data <- data[!is.na(data$father_birthyear),]
+  data <- data[!is.na(data$father_EduYears11_2023),]
   
   # Remove families without 2 sisters 
   data <- data %>%
@@ -839,7 +804,7 @@ run_analyses_father_EA <- function(data, school_performance, trait, onekid) {
   if (onekid == T){
     data <- data %>%
       group_by(father_lnr) %>%
-      slice_head(n = 1) %>%
+      slice_sample(n = 1) %>%
       ungroup() 
   }
   
@@ -853,14 +818,6 @@ run_analyses_father_EA <- function(data, school_performance, trait, onekid) {
   
   sample_size_afterdup <- nrow(data)
   
-  # Remove individual with missing birthyear for father or mother and get estimate of how much that is 
-  # Ideally I cna find all missing data in additional MOba surveys
-  
-  data <- data[!is.na(data$father_birthyear),]
-  data <- data[!is.na(data$father_EduYears11_2023),]
-  data <- data %>%
-    group_by(paternal_grandparents) %>%
-    filter(length(unique(father_lnr))>1)
   
   # Get sample sizes 
   sample_size <- nrow(data)
@@ -870,8 +827,7 @@ run_analyses_father_EA <- function(data, school_performance, trait, onekid) {
   number_of_families <- as.data.frame(table(number_of_siblings$Freq))
   number_of_families <- sum(number_of_families$Freq)
   loss_duplicated <- sample_size_beforedup - sample_size_afterdup
-  loss_missingbirthyear <- sample_size_afterdup - sample_size
-  
+
   # Data transformation
   data$sex <- as.numeric(data$sex)
   
@@ -890,7 +846,6 @@ run_analyses_father_EA <- function(data, school_performance, trait, onekid) {
                "father_birthyear", 
                "sex", 
                "father_EA")
-  means <- cbind(as.data.frame(means), rowname)
   means <- colMeans(cbind(data$school_perf, data$parent_outcome, 
                           data$birth_yr,  data$father_birthyear, 
                           data$sex, 
@@ -979,7 +934,7 @@ run_analyses_father_EA <- function(data, school_performance, trait, onekid) {
   
   # Save all results 
   results <- list(trait, school_performance, # variables
-                  sample_size, number_of_families, number_of_siblings, loss_duplicated, loss_missingbirthyear,  # sample sizes 
+                  sample_size, number_of_families, number_of_siblings, loss_duplicated,  # sample sizes 
                   descriptives, ICC, covariances, means, #descriptives
                   modpop_coef, modwithin_coef) # regressions results 
   results
@@ -994,21 +949,16 @@ run_analyses_fullMoba <- function(data, school_performance, trait, onekid) {
   
   # Remove missing data 
   data <- data %>% drop_na(parent_outcome) 
-  
-
-  # If more than one kid per mother, randomly remove one 
-  if (onekid == T){
-    data <- data %>%
-      group_by(sib_parent_id) %>%
-      slice_head(n = 1) %>%
-      ungroup() 
-  }
-
-  # Remove individual with missing birthyear for father or mother and get estimate of how much that is 
-  # Ideally I can find all missing data in additional Moba surveys
-  
   data <- data[!is.na(data$father_birthyear),]
   data <- data[!is.na(data$mother_birthyear),]
+
+  # If more than one kid per parental couple, randomly remove one 
+  if (onekid == T){
+    data <- data %>%
+      group_by(parents) %>%
+      slice_sample(n = 1) %>%
+      ungroup() 
+  }
 
   # Get sample sizes 
   sample_size <- nrow(data)
@@ -1106,21 +1056,16 @@ run_analyses_fullMoba_mother <- function(data, school_performance, trait, onekid
   
   # Remove missing data 
   data <- data %>% drop_na(parent_outcome) 
+  data <- data[!is.na(data$mother_birthyear),]
   
   
   # If more than one kid per mother, randomly remove one 
   if (onekid == T){
     data <- data %>%
       group_by(mother_lnr.x) %>%
-      slice_head(n = 1) %>%
+      slice_sample(n = 1) %>%
       ungroup() 
   }
-  
-  # Remove individual with missing birthyear for father or mother and get estimate of how much that is 
-  # Ideally I can find all missing data in additional Moba surveys
-  
-  data <- data[!is.na(data$father_birthyear),]
-  data <- data[!is.na(data$mother_birthyear),]
   
   # Get sample sizes 
   sample_size <- nrow(data)
