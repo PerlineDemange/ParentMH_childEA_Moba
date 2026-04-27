@@ -3,12 +3,13 @@
 # Start date: 03/11/2021
 # cleaned 2023-01-09
 # Updated 2025-01-03
+# Updated 2026-04-03 correction father >10yo exclusion and splice_sample 
 
 rm(list=ls())
 library(tidyverse)
 library(nlme)
 library(lme4)
-source("scripts/Functions.R")
+source("scripts/Functions_2026.R")
 library(psych)
 set.seed(42)
 library(grid)
@@ -28,10 +29,15 @@ table(school_moba_cousins_total$agein2015)
 
 # father's audit and anxiety and depression SCL8 where asked in 2015, which might be after the kid 10yo 
 # so I exclude kids > 10yo in 2015 for these data when the parent of relevance if the father (not a problem for SCL8 in mothers) 
+# check sample size pre abd after too
+length(unique(school_moba_cousins_total[!is.na(school_moba_cousins_total$SCL8),]$w19_0634_lnr)) #12361
 school_moba_cousins_total$SCL8[
   school_moba_cousins_total$sib_parent == "father" & school_moba_cousins_total$agein2015 >10 ] <- NA
+# unique 10811
+length(unique(school_moba_cousins_total[!is.na(school_moba_cousins_total$AUDIT),]$w19_0634_lnr)) #12280
 school_moba_cousins_total$AUDIT[
   school_moba_cousins_total$sib_parent == "father" & school_moba_cousins_total$agein2015 >10 ] <- NA
+#10758
 
 school_moba_cousins_total_NPREG05 <- school_moba_cousins_total %>% 
   drop_na(std_score_NPREG05)
@@ -71,9 +77,9 @@ for (i in 1:length(school_subject)){
   for ( j in 1:length(parental_trait)){
     results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
     estimates <- c("Population", "Within_effect", "Between_effect")
-    modpop_estimates <- results[[12]][2,]
-    modwithin_within_estimates <- results[[13]][2,]
-    modwithin_between_estimates <- results[[13]][3,]
+    modpop_estimates <- results[[11]][2,]
+    modwithin_within_estimates <- results[[12]][2,]
+    modwithin_between_estimates <- results[[12]][3,]
     
     res <- as.data.frame(rbind(modpop_estimates, 
                                modwithin_within_estimates, 
@@ -83,26 +89,28 @@ for (i in 1:length(school_subject)){
     res$school_subject <- school_subject[i]
     res$parental_trait <- parental_trait[j]
     res$sample_size <- results[[3]]
-    res$ICC <- results[[9]] 
+    res$ICC <- results[[8]] 
     res$number_of_families <- results[[4]]
     res$number_of_siblings <- mean(results[[5]]$Freq) # this is table
     res$loss_duplicated <- results[[6]]  
-    res$loss_missingbirthyear <- results[[7]]
     full_results <- rbind(full_results, res)
   }
 }
 head(full_results)
 full_results_siblings_total <- full_results
 #save
-save(full_results_siblings_total, file = "output/full_results_siblings_total_250106.rda")
+#save(full_results_siblings_total, file = "output/full_results_siblings_total_260403.rda")
+#load("output/full_results_siblings_total_260403.rda")
+save(full_results_siblings_total, file = "output/full_results_siblings_total_260403.rda")
+
 
 ## 1.4 Get all covariates estimates ##################################################
 full_results <- NULL
 for (i in 1:length(school_subject)){
   for ( j in 1:length(parental_trait)){
     results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
-    modpop_estimates <- as.data.frame(results[[12]])
-    modwithin_estimates <- as.data.frame(results[[13]])
+    modpop_estimates <- as.data.frame(results[[11]])
+    modwithin_estimates <- as.data.frame(results[[12]])
     modpop_estimates$model <- "population"
     modwithin_estimates$model <- "siblings"
     res <- rbind(modpop_estimates, modwithin_estimates)
@@ -116,7 +124,9 @@ for (i in 1:length(school_subject)){
 }
 
 full_results_siblings_total_allcov <- full_results
-save(full_results_siblings_total_allcov, file = "output/full_results_siblings_total_allcov_250106.rda")
+#save(full_results_siblings_total_allcov, file = "output/full_results_siblings_total_allcov_260403.rda")
+save(full_results_siblings_total_allcov,
+     file = "output/full_results_siblings_total_allcov_260403.rda")
 
 
 
@@ -127,35 +137,46 @@ parental_trait <- items_parents
 full_results <- NULL
 for (i in 1:length(school_subject)){
   for (j in 1:length(parental_trait)){
-    results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
-    covariances <- as.data.frame(results[[10]])
+    results <- get(paste0("results_", 
+                          school_subject[i],"_", 
+                          parental_trait[j]))
+    covariances <- as.data.frame(results[[9]])
     covariances$schoolsub <- school_subject[i]
     covariances$trait <- parental_trait[j]
     full_results <- rbind(full_results, covariances)
   }
 }
 covariances <- full_results
-save(covariances, file = "output/full_results_siblings_total_covariances_250106.rda")
+#save(covariances, 
+#     file = "output/full_results_siblings_total_covariances_260403.rda")
+save(covariances, 
+     file = "output/full_results_siblings_total_covariances_260403.rda")
+
 
 full_results <- NULL
 for (i in 1:length(school_subject)){
   for (j in 1:length(parental_trait)){
-    results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
-    means <- as.data.frame(results[[11]])
+    results <- get(paste0("results_", 
+                          school_subject[i],"_",
+                          parental_trait[j]))
+    means <- as.data.frame(results[[10]])
     means$schoolsub <- school_subject[i]
     means$trait <- parental_trait[j]
     full_results <- rbind(full_results, means)
   }
 }
 means <- full_results
-save(means, file = "output/full_results_siblings_total_means_250106.rda")
+#save(means, file = "output/full_results_siblings_total_means_260403.rda")
+save(means, file = "output/full_results_siblings_total_means_260403.rda")
 
 
 full_results <- NULL
 for (i in 1:length(school_subject)){
   for (j in 1:length(parental_trait)){
-    results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
-    descriptives <- as.data.frame(results[[8]])
+    results <- get(paste0("results_",
+                          school_subject[i],"_",
+                          parental_trait[j]))
+    descriptives <- as.data.frame(results[[7]])
     descriptives$schoolsub <- school_subject[i]
     descriptives$trait <- parental_trait[j]
     full_results <- rbind(full_results, descriptives)
@@ -163,7 +184,9 @@ for (i in 1:length(school_subject)){
 }
 
 descriptives <- full_results
-save(descriptives, file = "output/full_results_siblings_total_descriptives_250106.rda")
+#save(descriptives, file = "output/full_results_siblings_total_descriptives_260403.rda")
+save(descriptives, 
+     file = "output/full_results_siblings_total_descriptives_240403.rda")
 
 
 
@@ -195,9 +218,9 @@ for (i in 1:length(school_subject)){
   for ( j in 1:length(parental_trait)){
     results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
     estimates <- c("Population", "Within_effect", "Between_effect")
-    modpop_estimates <- results[[12]][2,]
-    modwithin_within_estimates <- results[[13]][2,]
-    modwithin_between_estimates <- results[[13]][3,]
+    modpop_estimates <- results[[11]][2,]
+    modwithin_within_estimates <- results[[12]][2,]
+    modwithin_between_estimates <- results[[12]][3,]
     
     res <- as.data.frame(rbind(modpop_estimates, 
                                modwithin_within_estimates, 
@@ -207,11 +230,10 @@ for (i in 1:length(school_subject)){
     res$school_subject <- school_subject[i]
     res$parental_trait <- parental_trait[j]
     res$sample_size <- results[[3]]
-    res$ICC <- results[[9]] 
+    res$ICC <- results[[8]] 
     res$number_of_families <- results[[4]]
     res$number_of_siblings <- mean(results[[5]]$Freq) # this is table
     res$loss_duplicated <- results[[6]]  
-    res$loss_missingbirthyear <- results[[7]]
     full_results <- rbind(full_results, res)
   }
 }
@@ -219,15 +241,15 @@ head(full_results)
 full_results_siblings_total <- full_results
 #save
 save(full_results_siblings_total, 
-     file = "output/full_results_siblings_total_EA_250106.rda")
+     file = "output/full_results_siblings_total_EA_260403.rda")
 
 ### 1.6.2 Get all covariates estimates ##################################################
 full_results <- NULL
 for (i in 1:length(school_subject)){
   for ( j in 1:length(parental_trait)){
     results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
-    modpop_estimates <- as.data.frame(results[[12]])
-    modwithin_estimates <- as.data.frame(results[[13]])
+    modpop_estimates <- as.data.frame(results[[11]])
+    modwithin_estimates <- as.data.frame(results[[12]])
     modpop_estimates$model <- "population"
     modwithin_estimates$model <- "siblings"
     res <- rbind(modpop_estimates, modwithin_estimates)
@@ -242,7 +264,7 @@ for (i in 1:length(school_subject)){
 
 full_results_siblings_total_allcov <- full_results
 save(full_results_siblings_total_allcov, 
-     file = "output/full_results_siblings_total_allcov_EA_250106.rda")
+     file = "output/full_results_siblings_total_allcov_EA_260403.rda")
 
 
 ### 1.6.3  Get descriptive in table### 
@@ -253,34 +275,34 @@ full_results <- NULL
 for (i in 1:length(school_subject)){
   for (j in 1:length(parental_trait)){
     results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
-    covariances <- as.data.frame(results[[10]])
+    covariances <- as.data.frame(results[[9]])
     covariances$schoolsub <- school_subject[i]
     covariances$trait <- parental_trait[j]
     full_results <- rbind(full_results, covariances)
   }
 }
 covariances <- full_results
-save(covariances, file = "output/full_results_siblings_total_covariances_EA_250106.rda")
+save(covariances, file = "output/full_results_siblings_total_covariances_EA_260403.rda")
 
 full_results <- NULL
 for (i in 1:length(school_subject)){
   for (j in 1:length(parental_trait)){
     results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
-    means <- as.data.frame(results[[11]])
+    means <- as.data.frame(results[[10]])
     means$schoolsub <- school_subject[i]
     means$trait <- parental_trait[j]
     full_results <- rbind(full_results, means)
   }
 }
 means <- full_results
-save(means, file = "output/full_results_siblings_total_means_EA_250106.rda")
+save(means, file = "output/full_results_siblings_total_means_EA_260403.rda")
 
 
 full_results <- NULL
 for (i in 1:length(school_subject)){
   for (j in 1:length(parental_trait)){
     results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
-    descriptives <- as.data.frame(results[[8]])
+    descriptives <- as.data.frame(results[[7]])
     descriptives$schoolsub <- school_subject[i]
     descriptives$trait <- parental_trait[j]
     full_results <- rbind(full_results, descriptives)
@@ -289,7 +311,7 @@ for (i in 1:length(school_subject)){
 
 descriptives <- full_results
 save(descriptives, 
-     file = "output/full_results_siblings_total_descriptives_EA_250106.rda")
+     file = "output/full_results_siblings_total_descriptives_EA_260403.rda")
 
 # 2. For mothers ################################################################
 ## 2.1  Load data with maternal cousins #######################
@@ -342,9 +364,9 @@ for (i in 1:length(school_subject)){
   for ( j in 1:length(parental_trait)){
     results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
     estimates <- c("Population", "Within_effect", "Between_effect")
-    modpop_estimates <- results[[12]][2,]
-    modwithin_within_estimates <- results[[13]][2,]
-    modwithin_between_estimates <- results[[13]][3,]
+    modpop_estimates <- results[[11]][2,]
+    modwithin_within_estimates <- results[[12]][2,]
+    modwithin_between_estimates <- results[[12]][3,]
     
     res <- as.data.frame(rbind(modpop_estimates, 
                                modwithin_within_estimates, 
@@ -354,26 +376,27 @@ for (i in 1:length(school_subject)){
     res$school_subject <- school_subject[i]
     res$parental_trait <- parental_trait[j]
     res$sample_size <- results[[3]]
-    res$ICC <- results[[9]] 
+    res$ICC <- results[[8]] 
     res$number_of_families <- results[[4]]
     res$number_of_siblings <- mean(results[[5]]$Freq) # this is table
     res$loss_duplicated <- results[[6]]  
-    res$loss_missingbirthyear <- results[[7]]
     full_results <- rbind(full_results, res)
   }
 }
 head(full_results)
 full_results_siblings_mother <- full_results
 #save
-save(full_results_siblings_mother, file = "output/full_results_siblings_mother_250106.rda")
+#save(full_results_siblings_mother, file = "output/full_results_siblings_mother_260403.rda")
+save(full_results_siblings_mother, 
+     file = "output/full_results_siblings_mother_260403.rda")
 
 ## 2.4 Get all covariates estimates ##################################################
 full_results <- NULL
 for (i in 1:length(school_subject)){
   for ( j in 1:length(parental_trait)){
     results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
-    modpop_estimates <- as.data.frame(results[[12]])
-    modwithin_estimates <- as.data.frame(results[[13]])
+    modpop_estimates <- as.data.frame(results[[11]])
+    modwithin_estimates <- as.data.frame(results[[12]])
     modpop_estimates$model <- "population"
     modwithin_estimates$model <- "siblings"
     res <- rbind(modpop_estimates, modwithin_estimates)
@@ -387,8 +410,10 @@ for (i in 1:length(school_subject)){
 }
 
 full_results_siblings_mother_allcov <- full_results
+#save(full_results_siblings_mother_allcov,
+#     file = "output/full_results_siblings_mother_allcov_260403.rda")
 save(full_results_siblings_mother_allcov,
-     file = "output/full_results_siblings_mother_allcov_250106.rda")
+     file = "output/full_results_siblings_mother_allcov_260403.rda")
 
 
 ## 2.5 Get descriptive in table #######
@@ -397,34 +422,38 @@ full_results <- NULL
 for (i in 1:length(school_subject)){
   for (j in 1:length(parental_trait)){
     results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
-    covariances <- as.data.frame(results[[10]])
+    covariances <- as.data.frame(results[[9]])
     covariances$schoolsub <- school_subject[i]
     covariances$trait <- parental_trait[j]
     full_results <- rbind(full_results, covariances)
   }
 }
 covariances <- full_results
-save(covariances, file = "output/full_results_siblings_mother_covariances_250106.rda")
+#save(covariances, file = "output/full_results_siblings_mother_covariances_260403.rda")
+save(covariances, 
+     file = "output/full_results_siblings_mother_covariances_260403.rda")
 
 full_results <- NULL
 for (i in 1:length(school_subject)){
   for (j in 1:length(parental_trait)){
     results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
-    means <- as.data.frame(results[[11]])
+    means <- as.data.frame(results[[10]])
     means$schoolsub <- school_subject[i]
     means$trait <- parental_trait[j]
     full_results <- rbind(full_results, means)
   }
 }
 means <- full_results
-save(means, file = "output/full_results_siblings_mother_means_250106.rda")
+#save(means, file = "output/full_results_siblings_mother_means_260403.rda")
+save(means,
+     file = "output/full_results_siblings_mother_means_260403.rda")
 
 
 full_results <- NULL
 for (i in 1:length(school_subject)){
   for (j in 1:length(parental_trait)){
     results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
-    descriptives <- as.data.frame(results[[8]])
+    descriptives <- as.data.frame(results[[7]])
     descriptives$schoolsub <- school_subject[i]
     descriptives$trait <- parental_trait[j]
     full_results <- rbind(full_results, descriptives)
@@ -432,8 +461,10 @@ for (i in 1:length(school_subject)){
 }
 
 descriptives <- full_results
+#save(descriptives, 
+#     file = "output/full_results_siblings_mother_descriptives_260403.rda")
 save(descriptives, 
-     file = "output/full_results_siblings_mother_descriptives_250106.rda")
+     file = "output/full_results_siblings_mother_descriptives_260403.rda")
 
 ## 2.6 Adjusting for EA #######
 
@@ -467,9 +498,9 @@ for (i in 1:length(school_subject)){
   for ( j in 1:length(parental_trait)){
     results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
     estimates <- c("Population", "Within_effect", "Between_effect")
-    modpop_estimates <- results[[12]][2,]
-    modwithin_within_estimates <- results[[13]][2,]
-    modwithin_between_estimates <- results[[13]][3,]
+    modpop_estimates <- results[[11]][2,]
+    modwithin_within_estimates <- results[[12]][2,]
+    modwithin_between_estimates <- results[[12]][3,]
     
     res <- as.data.frame(rbind(modpop_estimates, 
                                modwithin_within_estimates, 
@@ -479,11 +510,10 @@ for (i in 1:length(school_subject)){
     res$school_subject <- school_subject[i]
     res$parental_trait <- parental_trait[j]
     res$sample_size <- results[[3]]
-    res$ICC <- results[[9]] 
+    res$ICC <- results[[8]] 
     res$number_of_families <- results[[4]]
     res$number_of_siblings <- mean(results[[5]]$Freq) # this is table
     res$loss_duplicated <- results[[6]]  
-    res$loss_missingbirthyear <- results[[7]]
     full_results <- rbind(full_results, res)
   }
 }
@@ -491,15 +521,15 @@ head(full_results)
 full_results_siblings_mother <- full_results
 #save
 save(full_results_siblings_mother,
-     file = "output/full_results_siblings_mother_EA_250106.rda")
+     file = "output/full_results_siblings_mother_EA_260403.rda")
 
 ### 2.6.2 Get all covariates estimates ##################################################
 full_results <- NULL
 for (i in 1:length(school_subject)){
   for ( j in 1:length(parental_trait)){
     results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
-    modpop_estimates <- as.data.frame(results[[12]])
-    modwithin_estimates <- as.data.frame(results[[13]])
+    modpop_estimates <- as.data.frame(results[[11]])
+    modwithin_estimates <- as.data.frame(results[[12]])
     modpop_estimates$model <- "population"
     modwithin_estimates$model <- "siblings"
     res <- rbind(modpop_estimates, modwithin_estimates)
@@ -514,7 +544,7 @@ for (i in 1:length(school_subject)){
 
 full_results_siblings_mother_allcov <- full_results
 save(full_results_siblings_mother_allcov,
-     file = "output/full_results_siblings_mother_allcov_EA_250106.rda")
+     file = "output/full_results_siblings_mother_allcov_EA_260403.rda")
 
 
 ### 2.6.3  Get descriptive in table ######
@@ -523,7 +553,7 @@ full_results <- NULL
 for (i in 1:length(school_subject)){
   for (j in 1:length(parental_trait)){
     results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
-    covariances <- as.data.frame(results[[10]])
+    covariances <- as.data.frame(results[[9]])
     covariances$schoolsub <- school_subject[i]
     covariances$trait <- parental_trait[j]
     full_results <- rbind(full_results, covariances)
@@ -531,13 +561,13 @@ for (i in 1:length(school_subject)){
 }
 covariances <- full_results
 save(covariances, 
-     file = "output/full_results_siblings_mother_covariances_EA_250106.rda")
+     file = "output/full_results_siblings_mother_covariances_EA_260403.rda")
 
 full_results <- NULL
 for (i in 1:length(school_subject)){
   for (j in 1:length(parental_trait)){
     results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
-    means <- as.data.frame(results[[11]])
+    means <- as.data.frame(results[[10]])
     means$schoolsub <- school_subject[i]
     means$trait <- parental_trait[j]
     full_results <- rbind(full_results, means)
@@ -545,14 +575,14 @@ for (i in 1:length(school_subject)){
 }
 means <- full_results
 save(means, 
-     file = "output/full_results_siblings_mother_means_EA_250106.rda")
+     file = "output/full_results_siblings_mother_means_EA_260403.rda")
 
 
 full_results <- NULL
 for (i in 1:length(school_subject)){
   for (j in 1:length(parental_trait)){
     results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
-    descriptives <- as.data.frame(results[[8]])
+    descriptives <- as.data.frame(results[[7]])
     descriptives$schoolsub <- school_subject[i]
     descriptives$trait <- parental_trait[j]
     full_results <- rbind(full_results, descriptives)
@@ -561,7 +591,7 @@ for (i in 1:length(school_subject)){
 
 descriptives <- full_results
 save(descriptives, 
-     file = "output/full_results_siblings_mother_descriptives_EA_250106.rda")
+     file = "output/full_results_siblings_mother_descriptives_EA_260403.rda")
 
 
 # 3. For fathers ################################################################
@@ -576,12 +606,25 @@ table(school_father_moba_cousins$yeartest)
 school_father_moba_cousins$agein2015 <- 2015 - school_father_moba_cousins$birth_yr
 table(school_father_moba_cousins$agein2015)
 
+length(unique(school_father_moba_cousins[!is.na(school_father_moba_cousins$scale_score_items_f_SCL_Q2015_full),]$w19_0634_lnr)) #3356
 school_father_moba_cousins$scale_score_items_f_SCL_Q2015_full[school_father_moba_cousins$agein2015 >10 ] <- NA
-sum(is.na(school_father_moba_cousins$scale_score_items_f_SCL_Q2015_SCL5))
+#2253
+length(unique(school_father_moba_cousins[!is.na(school_father_moba_cousins$scale_score_items_f_SCL_Q2015_SCL5),]$w19_0634_lnr)) 
+#3355
 school_father_moba_cousins$scale_score_items_f_SCL_Q2015_SCL5[school_father_moba_cousins$agein2015 >10 ] <- NA
+#2252
+length(unique(school_father_moba_cousins[!is.na(school_father_moba_cousins$scale_score_items_f_SCL_Q2015_anx),]$w19_0634_lnr)) 
+#3353
 school_father_moba_cousins$scale_score_items_f_SCL_Q2015_anx[school_father_moba_cousins$agein2015 >10 ] <- NA
+#2250
+length(unique(school_father_moba_cousins[!is.na(school_father_moba_cousins$scale_score_items_f_SCL_Q2015_dep),]$w19_0634_lnr)) 
+#3356
 school_father_moba_cousins$scale_score_items_f_SCL_Q2015_dep[school_father_moba_cousins$agein2015 >10 ] <- NA
+#2253
+length(unique(school_father_moba_cousins[!is.na(school_father_moba_cousins$scale_score_items_f_AUDIT_Q2015),]$w19_0634_lnr)) 
+#3294
 school_father_moba_cousins$scale_score_items_f_AUDIT_Q2015[school_father_moba_cousins$agein2015 >10 ] <- NA
+#2214
 
 #Data with outcomes
 school_father_moba_cousins_NPREG05 <-school_father_moba_cousins %>% 
@@ -631,9 +674,9 @@ for (i in 1:length(school_subject)){
   for ( j in 1:length(parental_trait)){
     results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
     estimates <- c("Population", "Within_effect", "Between_effect")
-    modpop_estimates <- results[[12]][2,]
-    modwithin_within_estimates <- results[[13]][2,]
-    modwithin_between_estimates <- results[[13]][3,]
+    modpop_estimates <- results[[11]][2,]
+    modwithin_within_estimates <- results[[12]][2,]
+    modwithin_between_estimates <- results[[12]][3,]
     
     res <- as.data.frame(rbind(modpop_estimates, 
                                modwithin_within_estimates, 
@@ -643,11 +686,10 @@ for (i in 1:length(school_subject)){
     res$school_subject <- school_subject[i]
     res$parental_trait <- parental_trait[j]
     res$sample_size <- results[[3]]
-    res$ICC <- results[[9]] 
+    res$ICC <- results[[8]] 
     res$number_of_families <- results[[4]]
     res$number_of_siblings <- mean(results[[5]]$Freq) # this is table
     res$loss_duplicated <- results[[6]]  
-    res$loss_missingbirthyear <- results[[7]]
     full_results <- rbind(full_results, res)
   }
 }
@@ -655,15 +697,15 @@ head(full_results)
 full_results_siblings_father <- full_results
 #save
 save(full_results_siblings_father, 
-     file = "output/full_results_siblings_father_250106.rda")
+     file = "output/full_results_siblings_father_260403.rda")
 
 ## 3.4 Get all covariates estimates ##################################################
 full_results <- NULL
 for (i in 1:length(school_subject)){
   for ( j in 1:length(parental_trait)){
     results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
-    modpop_estimates <- as.data.frame(results[[12]])
-    modwithin_estimates <- as.data.frame(results[[13]])
+    modpop_estimates <- as.data.frame(results[[11]])
+    modwithin_estimates <- as.data.frame(results[[12]])
     modpop_estimates$model <- "population"
     modwithin_estimates$model <- "siblings"
     res <- rbind(modpop_estimates, modwithin_estimates)
@@ -678,7 +720,7 @@ for (i in 1:length(school_subject)){
 
 full_results_siblings_father_allcov <- full_results
 save(full_results_siblings_father_allcov, 
-     file = "output/full_results_siblings_father_allcov_250106.rda")
+     file = "output/full_results_siblings_father_allcov_260403.rda")
 
 
 ## 3.5 Get descriptive in table #######
@@ -687,34 +729,34 @@ full_results <- NULL
 for (i in 1:length(school_subject)){
   for (j in 1:length(parental_trait)){
     results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
-    covariances <- as.data.frame(results[[10]])
+    covariances <- as.data.frame(results[[9]])
     covariances$schoolsub <- school_subject[i]
     covariances$trait <- parental_trait[j]
     full_results <- rbind(full_results, covariances)
   }
 }
 covariances <- full_results
-save(covariances, file = "output/full_results_siblings_father_covariances_250106.rda")
+save(covariances, file = "output/full_results_siblings_father_covariances_260403.rda")
 
 full_results <- NULL
 for (i in 1:length(school_subject)){
   for (j in 1:length(parental_trait)){
     results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
-    means <- as.data.frame(results[[11]])
+    means <- as.data.frame(results[[10]])
     means$schoolsub <- school_subject[i]
     means$trait <- parental_trait[j]
     full_results <- rbind(full_results, means)
   }
 }
 means <- full_results
-save(means, file = "output/full_results_siblings_father_means_250106.rda")
+save(means, file = "output/full_results_siblings_father_means_260403.rda")
 
 
 full_results <- NULL
 for (i in 1:length(school_subject)){
   for (j in 1:length(parental_trait)){
     results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
-    descriptives <- as.data.frame(results[[8]])
+    descriptives <- as.data.frame(results[[7]])
     descriptives$schoolsub <- school_subject[i]
     descriptives$trait <- parental_trait[j]
     full_results <- rbind(full_results, descriptives)
@@ -722,7 +764,7 @@ for (i in 1:length(school_subject)){
 }
 
 descriptives <- full_results
-save(descriptives, file = "output/full_results_siblings_father_descriptives_250106.rda")
+save(descriptives, file = "output/full_results_siblings_father_descriptives_260403.rda")
 
 ## 3.6 Adjusting for EA #######
 
@@ -753,9 +795,9 @@ for (i in 1:length(school_subject)){
   for ( j in 1:length(parental_trait)){
     results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
     estimates <- c("Population", "Within_effect", "Between_effect")
-    modpop_estimates <- results[[12]][2,]
-    modwithin_within_estimates <- results[[13]][2,]
-    modwithin_between_estimates <- results[[13]][3,]
+    modpop_estimates <- results[[11]][2,]
+    modwithin_within_estimates <- results[[12]][2,]
+    modwithin_between_estimates <- results[[12]][3,]
     
     res <- as.data.frame(rbind(modpop_estimates, 
                                modwithin_within_estimates, 
@@ -765,11 +807,10 @@ for (i in 1:length(school_subject)){
     res$school_subject <- school_subject[i]
     res$parental_trait <- parental_trait[j]
     res$sample_size <- results[[3]]
-    res$ICC <- results[[9]] 
+    res$ICC <- results[[8]] 
     res$number_of_families <- results[[4]]
     res$number_of_siblings <- mean(results[[5]]$Freq) # this is table
     res$loss_duplicated <- results[[6]]  
-    res$loss_missingbirthyear <- results[[7]]
     full_results <- rbind(full_results, res)
   }
 }
@@ -777,15 +818,15 @@ head(full_results)
 full_results_siblings_father <- full_results
 #save
 save(full_results_siblings_father,
-     file = "output/full_results_siblings_father_EA_250106.rda")
+     file = "output/full_results_siblings_father_EA_260403.rda")
 
 ### 3.6.2 Get all covariates estimates ##################################################
 full_results <- NULL
 for (i in 1:length(school_subject)){
   for ( j in 1:length(parental_trait)){
     results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
-    modpop_estimates <- as.data.frame(results[[12]])
-    modwithin_estimates <- as.data.frame(results[[13]])
+    modpop_estimates <- as.data.frame(results[[11]])
+    modwithin_estimates <- as.data.frame(results[[12]])
     modpop_estimates$model <- "population"
     modwithin_estimates$model <- "siblings"
     res <- rbind(modpop_estimates, modwithin_estimates)
@@ -800,7 +841,7 @@ for (i in 1:length(school_subject)){
 
 full_results_siblings_father_allcov <- full_results
 save(full_results_siblings_father_allcov,
-     file = "output/full_results_siblings_father_allcov_EA_250106.rda")
+     file = "output/full_results_siblings_father_allcov_EA_260403.rda")
 
 
 ### 3.6.3  Get descriptive in table ######
@@ -809,7 +850,7 @@ full_results <- NULL
 for (i in 1:length(school_subject)){
   for (j in 1:length(parental_trait)){
     results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
-    covariances <- as.data.frame(results[[10]])
+    covariances <- as.data.frame(results[[9]])
     covariances$schoolsub <- school_subject[i]
     covariances$trait <- parental_trait[j]
     full_results <- rbind(full_results, covariances)
@@ -817,27 +858,27 @@ for (i in 1:length(school_subject)){
 }
 covariances <- full_results
 save(covariances, 
-     file = "output/full_results_siblings_father_covariances_EA_250106.rda")
+     file = "output/full_results_siblings_father_covariances_EA_260403.rda")
 
 full_results <- NULL
 for (i in 1:length(school_subject)){
   for (j in 1:length(parental_trait)){
     results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
-    means <- as.data.frame(results[[11]])
+    means <- as.data.frame(results[[10]])
     means$schoolsub <- school_subject[i]
     means$trait <- parental_trait[j]
     full_results <- rbind(full_results, means)
   }
 }
 means <- full_results
-save(means, file = "output/full_results_siblings_father_means_EA_250106.rda")
+save(means, file = "output/full_results_siblings_father_means_EA_260403.rda")
 
 
 full_results <- NULL
 for (i in 1:length(school_subject)){
   for (j in 1:length(parental_trait)){
     results <- get(paste0("results_", school_subject[i],"_", parental_trait[j]))
-    descriptives <- as.data.frame(results[[8]])
+    descriptives <- as.data.frame(results[[7]])
     descriptives$schoolsub <- school_subject[i]
     descriptives$trait <- parental_trait[j]
     full_results <- rbind(full_results, descriptives)
@@ -846,7 +887,7 @@ for (i in 1:length(school_subject)){
 
 descriptives <- full_results
 save(descriptives, 
-     file = "output/full_results_siblings_father_descriptives_EA_250106.rda")
+     file = "output/full_results_siblings_father_descriptives_EA_260403.rda")
 
 
 
@@ -855,6 +896,23 @@ save(descriptives,
 ## 4.1  All gender #####
 load("data/school_moba_kidpreg_total_250103.rda")
 #pregnancy relevant child, all possible
+
+school_moba_kidpreg_total$agein2015 <- 2015 - school_moba_kidpreg_total$birth_yr
+table(school_moba_kidpreg_total$agein2015, useNA = "ifany")
+
+# father's audit and anxiety and depression SCL8 where asked in 2015, which might be after the kid 10yo 
+# so I exclude kids > 10yo in 2015 for these data when the parent of relevance if the father (not a problem for SCL8 in mothers) 
+# check sample size pre abd after too
+length(unique(school_moba_kidpreg_total[school_moba_kidpreg_total$sib_parent == "father" & !is.na(school_moba_kidpreg_total$SCL8),]$w19_0634_lnr)) #33512
+length(unique(school_moba_kidpreg_total[!is.na(school_moba_kidpreg_total$SCL8),]$w19_0634_lnr)) #53688
+school_moba_kidpreg_total$SCL8[
+  school_moba_kidpreg_total$sib_parent == "father" & school_moba_kidpreg_total$agein2015 >10 ] <- NA
+# unique only father 23228, all 49389
+length(unique(school_moba_kidpreg_total[school_moba_kidpreg_total$sib_parent == "father" &!is.na(school_moba_kidpreg_total$AUDIT),]$w19_0634_lnr)) #33019
+length(unique(school_moba_kidpreg_total[!is.na(school_moba_kidpreg_total$AUDIT),]$w19_0634_lnr)) #53516
+school_moba_kidpreg_total$AUDIT[
+  school_moba_kidpreg_total$sib_parent == "father" & school_moba_kidpreg_total$agein2015 >10 ] <- NA
+#unique only father 22907, all 49266
 
 items_parents <- c("SCL5_Q1", "ADHD", "SCL8", "AUDIT")
 school_total_moba_kidpreg_NPREG05 <-school_moba_kidpreg_total %>% 
@@ -903,8 +961,10 @@ head(full_results)
 
 full_results_fullMoba_total <- full_results
 
+# save(full_results_fullMoba_total,
+#      file = "output/full_results_fullMoba_total_260403.rda")
 save(full_results_fullMoba_total,
-     file = "output/full_results_fullMoba_total_250106.rda")
+     file = "output/full_results_fullMoba_total_260403.rda")
 
 full_results <- NULL
 for (i in 1:length(school_subject)){
@@ -921,8 +981,10 @@ for (i in 1:length(school_subject)){
 }
 
 full_results_siblings_fullMoba_allcov <- full_results
+# save(full_results_siblings_fullMoba_allcov,
+#      file = "output/full_results_siblings_fullMoba_allcov_260403.rda")
 save(full_results_siblings_fullMoba_allcov,
-     file = "output/full_results_siblings_fullMoba_allcov_250106.rda")
+     file = "output/full_results_siblings_fullMoba_allcov_260403.rda")
 
 
 full_results <- NULL
@@ -936,8 +998,11 @@ for (i in 1:length(school_subject)){
   }
 }
 covariances <- full_results
+# save(covariances,
+#      file = "output/full_results_siblings_FullMoba__covariances_260403.rda")
 save(covariances,
-     file = "output/full_results_siblings_FullMoba__covariances_250106.rda")
+     file = "output/full_results_siblings_FullMoba__covariances_260403.rda")
+
 
 full_results <- NULL
 for (i in 1:length(school_subject)){
@@ -950,8 +1015,10 @@ for (i in 1:length(school_subject)){
   }
 }
 means <- full_results
+# save(means, 
+#      file = "output/full_results_siblings_fullMoba_means_EA_260403.rda")
 save(means, 
-     file = "output/full_results_siblings_fullMoba_means_EA_250106.rda")
+     file = "output/full_results_siblings_fullMoba_means_EA_260403.rda")
 
 
 full_results <- NULL
@@ -966,8 +1033,10 @@ for (i in 1:length(school_subject)){
 }
 
 descriptives <- full_results
+# save(descriptives, 
+#      file = "output/full_results_siblings_fullMoba_descriptives_260403.rda")
 save(descriptives, 
-     file = "output/full_results_siblings_fullMoba_descriptives_250106.rda")
+     file = "output/full_results_siblings_fullMoba_descriptives_260403.rda")
 
 
 
@@ -1023,8 +1092,10 @@ head(full_results)
 
 full_results_fullMoba_total <- full_results
 
+# save(full_results_fullMoba_total,
+#      file = "output/full_results_fullMoba_mother_260403.rda")
 save(full_results_fullMoba_total,
-     file = "output/full_results_fullMoba_mother_250106.rda")
+     file = "output/full_results_fullMoba_mother_260403.rda")
 
 full_results <- NULL
 for (i in 1:length(school_subject)){
@@ -1041,8 +1112,10 @@ for (i in 1:length(school_subject)){
 }
 
 full_results_siblings_fullMoba_allcov <- full_results
+# save(full_results_siblings_fullMoba_allcov,
+#      file = "output/full_results_siblings_fullMoba_mother_allcov_260403.rda")
 save(full_results_siblings_fullMoba_allcov,
-     file = "output/full_results_siblings_fullMoba_mother_allcov_250106.rda")
+     file = "output/full_results_siblings_fullMoba_mother_allcov_260403.rda")
 
 
 full_results <- NULL
@@ -1056,8 +1129,10 @@ for (i in 1:length(school_subject)){
   }
 }
 covariances <- full_results
+# save(covariances, 
+#      file = "output/full_results_siblings_fullMoba_mother_covariances_260403.rda")
 save(covariances, 
-     file = "output/full_results_siblings_fullMoba_mother_covariances_250106.rda")
+     file = "output/full_results_siblings_fullMoba_mother_covariances_260403.rda")
 
 full_results <- NULL
 for (i in 1:length(school_subject)){
@@ -1070,7 +1145,10 @@ for (i in 1:length(school_subject)){
   }
 }
 means <- full_results
-save(means, file = "output/full_results_siblings_fullMoba_mother_means_250106.rda")
+# save(means, 
+#      file = "output/full_results_siblings_fullMoba_mother_means_260403.rda")
+save(means, 
+     file = "output/full_results_siblings_fullMoba_mother_means_260403.rda")
 
 
 full_results <- NULL
@@ -1085,6 +1163,9 @@ for (i in 1:length(school_subject)){
 }
 
 descriptives <- full_results
+# save(descriptives, 
+#      file = "output/full_results_siblings_fullMoba_mother_descriptives_260403.rda")
 save(descriptives, 
-     file = "output/full_results_siblings_fullMoba_mother_descriptives_250106.rda")
+     file = "output/full_results_siblings_fullMoba_mother_descriptives_260403.rda")
+
 
